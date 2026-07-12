@@ -64,12 +64,18 @@ npm run build
 
 ### 4. Point Grok at it
 
-Add to `~/.grok/config.toml` (paths adjusted to your machine):
+From the repo root, print a ready-to-paste config with absolute paths:
+
+```bash
+npm run print-mcp-config
+```
+
+Or add to `~/.grok/config.toml` manually (replace `<REPO_ROOT>` with your clone path):
 
 ```toml
 [mcp_servers.grok-code]
 command = "node"
-args = ["/home/ubuntu/Desktop/VS Code Open Source/vscode-mcp/mcp-server/dist/index.js"]
+args = ["<REPO_ROOT>/vscode-mcp/mcp-server/dist/index.js"]
 enabled = true
 startup_timeout_sec = 15
 tool_timeout_sec = 120
@@ -81,10 +87,16 @@ VSCODE_MCP_PORT = "7331"
 # VSCODE_MCP_TOKEN = "paste-from-command-palette"
 ```
 
-Or:
+Or via Grok CLI (use the path from `npm run print-mcp-config`):
 
 ```bash
-grok mcp add grok-code -- node "/home/ubuntu/Desktop/VS Code Open Source/vscode-mcp/mcp-server/dist/index.js"
+grok mcp add grok-code -- node "<REPO_ROOT>/vscode-mcp/mcp-server/dist/index.js"
+```
+
+Set `GROK_CODE_ROOT` to your clone so the bridge extension can auto-discover the MCP server:
+
+```bash
+export GROK_CODE_ROOT="<REPO_ROOT>"
 ```
 
 Restart Grok (or reload MCP). Open Grok Code with the bridge running, then ask Grok to use `vscode_ping` (tool names unchanged).

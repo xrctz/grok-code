@@ -39,6 +39,8 @@ Open files, read selections, apply edits, run commands, surface diagnostics — 
 
 See **[vscode-mcp/README.md](./vscode-mcp/README.md)** and **[vscode-src/GROK_CODE_NOTES.md](./vscode-src/GROK_CODE_NOTES.md)**.
 
+Contributing? See **[CONTRIBUTING.md](./CONTRIBUTING.md)**.
+
 ### No Copilot (Grok-only)
 
 GitHub Copilot is **not** part of this product:
@@ -49,7 +51,9 @@ GitHub Copilot is **not** part of this product:
 - AI control path is **vscode-mcp** (bridge + MCP tools), not Copilot
 
 ```bash
-```bash
+# First-time setup (install deps in vscode-mcp subpackages)
+npm run install:all
+
 # Build bridge + MCP server, run smoke tests
 npm test
 

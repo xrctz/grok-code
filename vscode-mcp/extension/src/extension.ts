@@ -196,7 +196,6 @@ function resolveMcpServerEntry(context: vscode.ExtensionContext): string | undef
     context.extensionPath,
     path.dirname(context.extensionPath),
     path.dirname(path.dirname(context.extensionPath)),
-    path.join(os.homedir(), 'Desktop', 'VS Code Open Source', 'vscode-mcp'),
     process.env.GROK_CODE_ROOT || ''
   ].filter(Boolean);
 

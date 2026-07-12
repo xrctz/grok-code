@@ -1,6 +1,6 @@
 # Grok Code UI
 
-Full product shell for **Grok Code** (v0.3):
+Full product shell for **Grok Code** (v0.3.1):
 
 - Dark / Void themes + top activity bar layout
 - **Home Stage** — AI video scenes, particle field, typing title/tagline, terminal boot demo
@@ -26,6 +26,11 @@ Full product shell for **Grok Code** (v0.3):
 
 ## Install
 
+From the repo root:
+
 ```bash
-code --install-extension grok-code-ui-0.3.0.vsix
+npm run package:ui
+code --install-extension vscode-mcp/grok-code-ui/grok-code-ui-0.3.1.vsix
 ```
+
+Or use `npm run launch`, which installs the latest `grok-code-ui-*.vsix` automatically.
