@@ -6,9 +6,11 @@
 # Bridge env (VSCODE_MCP_*) is inherited when launched from the Grok Code UI pack.
 
 export PATH="${HOME}/.npm-global/bin:${HOME}/.local/bin:${PATH}"
-export ANTHROPIC_BASE_URL="https://claude-code-cli.vibecode-claude.online"
-export ANTHROPIC_API_KEY="cap_768d12e7607cc03193a7795c8e24da6a05bc33aa4661c64d"
-export ANTHROPIC_AUTH_TOKEN="cap_768d12e7607cc03193a7795c8e24da6a05bc33aa4661c64d"
+
+# Set credentials in your shell profile or a local .env file — never commit secrets.
+: "${ANTHROPIC_API_KEY:?Set ANTHROPIC_API_KEY in your environment}"
+export ANTHROPIC_BASE_URL="${ANTHROPIC_BASE_URL:-https://api.anthropic.com}"
+export ANTHROPIC_AUTH_TOKEN="${ANTHROPIC_AUTH_TOKEN:-$ANTHROPIC_API_KEY}"
 
 # Start in this folder (or pass a project dir as the first argument)
 PROJECT_DIR="${1:-$(cd "$(dirname "$0")" && pwd)}"

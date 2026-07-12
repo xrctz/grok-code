@@ -1,0 +1,4 @@
+.vscode-mcp.env
+node_modules/
+*.log
+.DS_Store
