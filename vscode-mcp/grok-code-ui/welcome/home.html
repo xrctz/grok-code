@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Grok Code</title>
+  <style>
+    :root {
+      --void: #050508;
+      --panel: rgba(12, 12, 16, 0.78);
+      --violet: #8b5cf6;
+      --violet-soft: #a78bfa;
+      --cyan: #67e8f9;
+      --text: #e8e8ed;
+      --muted: #8b8b9a;
+      --line: rgba(30, 30, 40, 0.9);
+      --mono: "JetBrains Mono", "Cascadia Code", "Fira Code", ui-monospace, monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      height: 100%;
+      background: var(--void);
+      color: var(--text);
+      font-family: "Segoe UI", "Helvetica Neue", system-ui, sans-serif;
+      overflow: hidden;
+    }
+    body {
+      display: grid;
+      grid-template-rows: 1fr auto;
+    }
+
+    /* ===== Stage ===== */
+    .stage {
+      position: relative;
+      min-height: 0;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+    }
+    .stage video.bg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.5;
+      filter: saturate(1.2) contrast(1.05);
+      transition: opacity 0.8s ease;
+    }
+    .veil {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 50% 28%, rgba(139, 92, 246, 0.32) 0%, transparent 48%),
+        radial-gradient(ellipse at 80% 80%, rgba(103, 232, 249, 0.08) 0%, transparent 40%),
+        linear-gradient(180deg, rgba(5,5,8,0.15) 0%, rgba(5,5,8,0.75) 68%, #050508 100%);
+      pointer-events: none;
+    }
+    .scanlines {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.04;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(255,255,255,0.06) 2px,
+        rgba(255,255,255,0.06) 3px
+      );
+      animation: scan 8s linear infinite;
+    }
+    @keyframes scan {
+      0% { background-position: 0 0; }
+      100% { background-position: 0 60px; }
+    }
+    .particles { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+    .particles span {
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      border-radius: 50%;
+      opacity: 0.4;
+      animation: rise linear infinite;
+      box-shadow: 0 0 6px currentColor;
+    }
+    @keyframes rise {
+      0% { transform: translateY(110vh) scale(0.5); opacity: 0; }
+      12% { opacity: 0.55; }
+      100% { transform: translateY(-12vh) scale(1.2); opacity: 0; }
+    }
+
+    /* ===== Hero ===== */
+    .hero {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      padding: 1.5rem 2rem 2rem;
+      max-width: 900px;
+      width: 100%;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 0.95rem;
+      border: 1px solid rgba(167, 139, 250, 0.4);
+      border-radius: 999px;
+      background: rgba(12, 12, 16, 0.7);
+      color: var(--violet-soft);
+      font-size: 0.72rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-bottom: 1.1rem;
+      backdrop-filter: blur(12px);
+      animation: fadeUp 0.7s ease both;
+    }
+    .badge .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--cyan);
+      box-shadow: 0 0 12px var(--cyan);
+      animation: pulse 1.6s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.45; transform: scale(0.85); }
+      50% { opacity: 1; transform: scale(1.2); }
+    }
+    .logo {
+      width: 92px;
+      height: 92px;
+      border-radius: 24px;
+      margin: 0 auto 1.15rem;
+      box-shadow:
+        0 0 0 1px rgba(167,139,250,0.4),
+        0 0 40px rgba(139,92,246,0.35),
+        0 24px 60px rgba(0,0,0,0.55);
+      animation: float 5.5s ease-in-out infinite, fadeUp 0.8s ease both 0.05s;
+      object-fit: cover;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    h1 {
+      font-size: clamp(2.6rem, 6vw, 4rem);
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.35rem;
+      min-height: 1.15em;
+      animation: fadeUp 0.85s ease both 0.1s;
+    }
+    h1 .grad {
+      background: linear-gradient(120deg, #c4b5fd 0%, #ffffff 42%, #67e8f9 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    h1 .caret {
+      display: inline-block;
+      width: 3px;
+      height: 0.85em;
+      margin-left: 4px;
+      background: linear-gradient(180deg, var(--cyan), var(--violet));
+      vertical-align: -0.08em;
+      border-radius: 2px;
+      box-shadow: 0 0 12px var(--violet-soft);
+      animation: blink 1s steps(1) infinite;
+    }
+    @keyframes blink {
+      0%, 45% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    .tagline {
+      color: var(--muted);
+      font-size: 1.05rem;
+      line-height: 1.55;
+      max-width: 34rem;
+      margin: 0.4rem auto 0.9rem;
+      min-height: 3.2em;
+      animation: fadeUp 0.9s ease both 0.15s;
+    }
+    .tagline .typed { color: #c8c8d4; }
+    .tagline .caret-sm {
+      display: inline-block;
+      width: 2px;
+      height: 1em;
+      background: var(--cyan);
+      margin-left: 2px;
+      vertical-align: -0.1em;
+      animation: blink 0.9s steps(1) infinite;
+    }
+
+    /* Terminal typing demo */
+    .term {
+      margin: 0.85rem auto 1.4rem;
+      max-width: 520px;
+      text-align: left;
+      background: rgba(8, 8, 12, 0.82);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      overflow: hidden;
+      backdrop-filter: blur(14px);
+      box-shadow: 0 20px 50px rgba(0,0,0,0.45), 0 0 0 1px rgba(139,92,246,0.12);
+      animation: fadeUp 1s ease both 0.2s;
+    }
+    .term-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0.55rem 0.85rem;
+      border-bottom: 1px solid var(--line);
+      background: rgba(16,16,22,0.9);
+    }
+    .term-bar i {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .term-bar i:nth-child(1) { background: #ff6b7a; }
+    .term-bar i:nth-child(2) { background: #fbbf24; }
+    .term-bar i:nth-child(3) { background: #4ade80; }
+    .term-bar span {
+      margin-left: 0.5rem;
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .term-body {
+      padding: 0.9rem 1rem 1rem;
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      line-height: 1.65;
+      height: 176px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+    }
+    .term-body::-webkit-scrollbar {
+      display: none;
+    }
+    .term-body .prompt { color: var(--violet-soft); }
+    .term-body .cmd { color: var(--text); }
+    .term-body .out { color: var(--cyan); opacity: 0.9; }
+    .term-body .dim { color: var(--muted); }
+    .term-body .line { white-space: pre-wrap; }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.7rem;
+      justify-content: center;
+      animation: fadeUp 1.05s ease both 0.25s;
+    }
+    button {
+      border: none;
+      cursor: pointer;
+      font: inherit;
+      border-radius: 11px;
+      padding: 0.78rem 1.2rem;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    }
+    button:hover { transform: translateY(-2px); }
+    button:active { transform: translateY(0); }
+    button.primary {
+      background: linear-gradient(135deg, #8b5cf6, #6d28d9 60%, #4c1d95);
+      color: white;
+      box-shadow: 0 12px 32px rgba(109, 40, 217, 0.4);
+      font-weight: 600;
+    }
+    button.primary:hover {
+      box-shadow: 0 16px 40px rgba(109, 40, 217, 0.55);
+    }
+    button.ghost {
+      background: rgba(12,12,16,0.72);
+      color: var(--text);
+      border: 1px solid var(--line);
+      backdrop-filter: blur(10px);
+    }
+    button.ghost:hover {
+      border-color: rgba(167,139,250,0.55);
+      box-shadow: 0 0 20px rgba(139,92,246,0.15);
+    }
+
+    .switcher {
+      position: absolute;
+      right: 1rem;
+      bottom: 1rem;
+      z-index: 3;
+      display: flex;
+      gap: 0.45rem;
+    }
+    .switcher button {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      padding: 0;
+      background: rgba(255,255,255,0.22);
+      border: none;
+    }
+    .switcher button.active {
+      background: var(--violet-soft);
+      box-shadow: 0 0 12px var(--violet);
+      transform: scale(1.15);
+    }
+
+    /* ===== Dock ===== */
+    .dock {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      background: var(--line);
+      border-top: 1px solid var(--line);
+    }
+    .card {
+      background: var(--panel);
+      padding: 1.05rem 1.15rem;
+      min-height: 108px;
+      backdrop-filter: blur(12px);
+      position: relative;
+      overflow: hidden;
+      transition: background 0.2s ease;
+    }
+    .card:hover { background: rgba(18, 18, 26, 0.92); }
+    .card::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--violet-soft), var(--cyan), transparent);
+      opacity: 0.55;
+    }
+    .card h3 {
+      font-size: 0.78rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--violet-soft);
+      margin-bottom: 0.4rem;
+    }
+    .card p {
+      color: var(--muted);
+      font-size: 0.86rem;
+      line-height: 1.45;
+    }
+    .card .art {
+      position: absolute;
+      right: -10px;
+      bottom: -10px;
+      width: 72px;
+      height: 72px;
+      opacity: 0.18;
+      border-radius: 16px;
+      object-fit: cover;
+      pointer-events: none;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 900px) {
+      .dock { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 560px) {
+      .dock { grid-template-columns: 1fr; }
+      .term { margin-left: 0.75rem; margin-right: 0.75rem; }
+    }
+  </style>
+</head>
+<body>
+  <section class="stage">
+    <video class="bg" id="bg" autoplay muted loop playsinline></video>
+    <div class="veil"></div>
+    <div class="scanlines"></div>
+    <div class="particles" id="particles"></div>
+
+    <div class="hero">
+      <div class="badge"><span class="dot"></span> Grok Code · AI-native shell</div>
+      <img class="logo" id="logo" alt="Grok Code" />
+      <h1><span class="grad" id="titleTyped"></span><span class="caret" id="titleCaret"></span></h1>
+      <p class="tagline">
+        <span class="typed" id="tagTyped"></span><span class="caret-sm" id="tagCaret"></span>
+      </p>
+
+      <div class="bridge-info" id="bridgeInfo" style="display: none; margin: 0.5rem auto 1.2rem auto; font-size: 0.8rem; color: var(--text-muted, #94a3b8); gap: 0.8rem; justify-content: center; align-items: center; border: 1px solid rgba(139, 92, 246, 0.15); background: rgba(5, 5, 8, 0.6); padding: 0.4rem 0.8rem; border-radius: 999px; width: fit-content; backdrop-filter: blur(10px);">
+        <span style="display: flex; align-items: center; gap: 0.4rem;">
+          <span style="width: 6px; height: 6px; border-radius: 50%; background: #67e8f9; box-shadow: 0 0 8px #67e8f9;"></span>
+          Bridge: <code id="bridgeUrl" style="color: #67e8f9; font-family: monospace; font-weight: bold;"></code>
+        </span>
+        <button id="copyTokenBtn" style="background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); color: #fff; padding: 0.2rem 0.6rem; font-size: 0.75rem; border-radius: 999px; cursor: pointer; transition: all 0.2s; outline: none; margin-left: 0.5rem;">Copy Token</button>
+      </div>
+
+      <div class="term" aria-hidden="true">
+        <div class="term-bar">
+          <i></i><i></i><i></i>
+          <span>grok-code · session</span>
+        </div>
+        <div class="term-body" id="termBody"></div>
+      </div>
+
+      <div class="actions">
+        <button class="primary" data-cmd="openFolder">Open Workspace</button>
+        <button class="ghost" data-cmd="newFile">New File</button>
+        <button class="ghost" data-cmd="commandPalette">Commands</button>
+        <button class="ghost" data-cmd="openExplorer">Explorer</button>
+      </div>
+    </div>
+
+    <div class="switcher" id="switcher"></div>
+  </section>
+
+  <section class="dock">
+    <div class="card">
+      <h3>Identity</h3>
+      <p>Stock chrome stripped. Product surface is Grok Code — icons, letterpress, theme, title.</p>
+      <img class="art" id="artPanel" alt="" />
+    </div>
+    <div class="card">
+      <h3>Motion</h3>
+      <p>AI-generated loops, particles, typing sequences, and a living home stage.</p>
+    </div>
+    <div class="card">
+      <h3>Editor</h3>
+      <p>Void dark theme, top activity bar, violet accent, ligatures, smooth caret.</p>
+    </div>
+    <div class="card">
+      <h3>Control</h3>
+      <p>MCP bridge: Grok drives the live workspace — open, edit, diagnose, command.</p>
+    </div>
+    <div class="card highlight" style="grid-column: span 2; border-color: rgba(139, 92, 246, 0.4); background: rgba(139, 92, 246, 0.03);">
+      <h3 style="background: linear-gradient(135deg, #fff, var(--grok-violet)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Interactive Onboarding</h3>
+      <p style="margin-bottom: 1rem;">Verify your Grok Code features and run diagnostic checks in real time.</p>
+      
+      <div class="checklist" style="display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 1.2rem; text-align: left; max-width: 320px; margin-left: auto; margin-right: auto;">
+        <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.3rem;">
+          <span>⚡ HTTP Bridge Status</span>
+          <span id="chkBridge" style="color: #ef4444; font-weight: bold;">OFFLINE</span>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.3rem;">
+          <span>🤖 MCP Auto-Registration</span>
+          <span id="chkMcp" style="color: #67e8f9; font-weight: bold;">CONNECTED</span>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.3rem;">
+          <span>📂 Workspace Active</span>
+          <span id="chkWorkspace" style="color: #67e8f9; font-weight: bold;">LOADED</span>
+        </div>
+      </div>
+      
+      <div style="display: flex; gap: 0.8rem; justify-content: center;">
+        <button class="primary" id="runDiagBtn" style="padding: 0.4rem 1rem; font-size: 0.8rem; border-radius: 6px;">Run Editor Diagnostics</button>
+        <button id="createTestFileBtn" style="padding: 0.4rem 1rem; font-size: 0.8rem; border-radius: 6px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); color: #fff; cursor: pointer; transition: all 0.2s; outline: none;">Spawn Demo File</button>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    const vscode = acquireVsCodeApi();
+    const video = document.getElementById('bg');
+    const logo = document.getElementById('logo');
+    const titleEl = document.getElementById('titleTyped');
+    const tagEl = document.getElementById('tagTyped');
+    const termBody = document.getElementById('termBody');
+    const switcher = document.getElementById('switcher');
+
+    // particles
+    const host = document.getElementById('particles');
+    for (let i = 0; i < 36; i++) {
+      const s = document.createElement('span');
+      s.style.left = Math.random() * 100 + '%';
+      s.style.animationDuration = 7 + Math.random() * 12 + 's';
+      s.style.animationDelay = Math.random() * 9 + 's';
+      const c = Math.random() > 0.45 ? '#67e8f9' : '#a78bfa';
+      s.style.background = c;
+      s.style.color = c;
+      host.appendChild(s);
+    }
+
+    function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    async function typeText(el, text, speed = 42) {
+      el.textContent = '';
+      for (let i = 0; i < text.length; i++) {
+        el.textContent += text[i];
+        await sleep(speed + Math.random() * 28);
+      }
+    }
+
+    async function typeTitle() {
+      await typeText(titleEl, 'Grok Code', 70);
+      document.getElementById('titleCaret').style.opacity = '0.35';
+    }
+
+    async function typeTag() {
+      const lines = [
+        'Stripped of stock branding. Built for intelligence.',
+        'Custom art. Motion. Typing that feels alive.',
+        'Your AI-native editor — entirely ours.',
+      ];
+      let i = 0;
+      while (true) {
+        const t = lines[i % lines.length];
+        await typeText(tagEl, t, 28);
+        await sleep(2600);
+        // delete
+        while (tagEl.textContent.length) {
+          tagEl.textContent = tagEl.textContent.slice(0, -1);
+          await sleep(16);
+        }
+        await sleep(280);
+        i++;
+      }
+    }
+
+    let isLiveMode = false;
+    const maxTermLines = 7;
+
+    async function typeTerminalLine(type, text, prefix = '') {
+      const line = document.createElement('div');
+      line.className = 'line';
+      termBody.appendChild(line);
+      
+      termBody.scrollTop = termBody.scrollHeight;
+      while (termBody.children.length > maxTermLines) {
+        termBody.removeChild(termBody.firstChild);
+      }
+
+      if (type === 'cmd') {
+        const prompt = document.createElement('span');
+        prompt.className = 'prompt';
+        prompt.textContent = prefix || 'grok ';
+        const cmd = document.createElement('span');
+        cmd.className = 'cmd';
+        line.appendChild(prompt);
+        line.appendChild(cmd);
+        for (const ch of text) {
+          cmd.textContent += ch;
+          await sleep(15 + Math.random() * 12);
+        }
+      } else if (type === 'out') {
+        const out = document.createElement('span');
+        out.className = 'out';
+        line.appendChild(out);
+        for (const ch of text) {
+          out.textContent += ch;
+          await sleep(8);
+        }
+      } else {
+        const dim = document.createElement('span');
+        dim.className = 'dim';
+        line.appendChild(dim);
+        for (const ch of text) {
+          dim.textContent += ch;
+          await sleep(8);
+        }
+      }
+      await sleep(150);
+    }
+
+    async function runTerminalDemoClean() {
+      const cycles = [
+        [
+          { type: 'dim', text: '// boot sequence' },
+          { type: 'cmd', text: 'grok init --product grok-code' },
+          { type: 'out', text: '✓ identity loaded' },
+          { type: 'out', text: '✓ stock chrome stripped' },
+          { type: 'out', text: '✓ motion + art online' },
+          { type: 'cmd', text: 'grok ready' },
+          { type: 'out', text: 'welcome back, builder.' },
+        ],
+        [
+          { type: 'dim', text: '// live session' },
+          { type: 'cmd', text: 'grok open README.md' },
+          { type: 'out', text: '✓ editor focused' },
+          { type: 'cmd', text: 'grok theme apply void-dark' },
+          { type: 'out', text: '✓ violet · cyan · void' },
+          { type: 'out', text: 'no copilot. just grok.' },
+        ],
+      ];
+      let c = 0;
+      while (!isLiveMode) {
+        termBody.innerHTML = '';
+        const script = cycles[c % cycles.length];
+        for (const step of script) {
+          if (isLiveMode) break;
+          const line = document.createElement('div');
+          line.className = 'line';
+          termBody.appendChild(line);
+          if (step.type === 'cmd') {
+            const prompt = document.createElement('span');
+            prompt.className = 'prompt';
+            prompt.textContent = 'grok ';
+            const cmd = document.createElement('span');
+            cmd.className = 'cmd';
+            line.appendChild(prompt);
+            line.appendChild(cmd);
+            const body = step.text.startsWith('grok ') ? step.text.slice(5) : step.text;
+            for (const ch of body) {
+              if (isLiveMode) break;
+              cmd.textContent += ch;
+              await sleep(22 + Math.random() * 20);
+            }
+          } else if (step.type === 'out') {
+            const out = document.createElement('span');
+            out.className = 'out';
+            line.appendChild(out);
+            for (const ch of step.text) {
+              if (isLiveMode) break;
+              out.textContent += ch;
+              await sleep(12);
+            }
+          } else {
+            const dim = document.createElement('span');
+            dim.className = 'dim';
+            line.appendChild(dim);
+            for (const ch of step.text) {
+              if (isLiveMode) break;
+              dim.textContent += ch;
+              await sleep(10);
+            }
+          }
+          await sleep(280);
+        }
+        await sleep(3000);
+        c++;
+      }
+    }
+
+    const liveActionsQueue = [];
+    let processingQueue = false;
+
+    async function processQueue() {
+      if (processingQueue) return;
+      processingQueue = true;
+      
+      if (!isLiveMode) {
+        isLiveMode = true;
+        termBody.innerHTML = '';
+        await typeTerminalLine('dim', '// live connection established');
+      }
+
+      while (liveActionsQueue.length > 0) {
+        const payload = liveActionsQueue.shift();
+        let cmdText = '';
+        let outText = '';
+        
+        switch (payload.action) {
+          case 'open_file':
+            const basename = payload.path ? payload.path.split(/[\\/]/).pop() : 'file';
+            cmdText = `open ${basename}`;
+            outText = `✓ opened editor at line ${payload.line || 1}`;
+            break;
+          case 'insert_text':
+            cmdText = `insert text (${payload.length} chars)`;
+            outText = `✓ inserted at cursor`;
+            break;
+          case 'replace_selection':
+            cmdText = `replace selection (${payload.length} chars)`;
+            outText = `✓ selection updated`;
+            break;
+          case 'edit_file':
+            const editBasename = payload.path ? payload.path.split(/[\\/]/).pop() : 'file';
+            cmdText = `patch ${editBasename}`;
+            outText = `✓ applied ${payload.editsCount || 1} range edits`;
+            break;
+          case 'save_file':
+            const saveBasename = payload.path === 'all' ? 'all' : (payload.path ? payload.path.split(/[\\/]/).pop() : 'file');
+            cmdText = `save ${saveBasename}`;
+            outText = `✓ saved to disk`;
+            break;
+          case 'run_command':
+            cmdText = `run command "${payload.command}"`;
+            outText = `✓ executed successfully`;
+            break;
+          case 'show_message':
+            cmdText = `print "${payload.message}"`;
+            outText = `✓ toasted message (${payload.type || 'info'})`;
+            break;
+          case 'open_browser':
+            cmdText = `browser open "${payload.url}"`;
+            outText = `✓ webview tab opened`;
+            break;
+          case 'create_file':
+            const createBasename = payload.path ? payload.path.split(/[\\/]/).pop() : 'file';
+            cmdText = `create file ${createBasename}`;
+            outText = `✓ new file created`;
+            break;
+          case 'delete_file':
+            const deleteBasename = payload.path ? payload.path.split(/[\\/]/).pop() : 'file';
+            cmdText = `delete file ${deleteBasename}`;
+            outText = `✓ file removed`;
+            break;
+          case 'rename_file':
+            const oldBase = payload.oldPath ? payload.oldPath.split(/[\\/]/).pop() : 'old';
+            const newBase = payload.newPath ? payload.newPath.split(/[\\/]/).pop() : 'new';
+            cmdText = `move ${oldBase} -> ${newBase}`;
+            outText = `✓ file renamed`;
+            break;
+          case 'create_terminal':
+            cmdText = `terminal create "${payload.name}"`;
+            outText = `✓ integrated terminal open`;
+            break;
+          case 'terminal_command':
+            cmdText = `terminal run "${payload.command}"`;
+            outText = `✓ command sent to terminal "${payload.name}"`;
+            break;
+          case 'close_terminal':
+            cmdText = `terminal close "${payload.name}"`;
+            outText = `✓ terminal disposed`;
+            break;
+          default:
+            cmdText = `${payload.action}`;
+            outText = `✓ done`;
+            break;
+        }
+
+        await typeTerminalLine('cmd', cmdText);
+        await typeTerminalLine('out', outText);
+      }
+      
+      processingQueue = false;
+    }
+
+    let clipIndex = 0;
+    function setClip(i) {
+      if (!window.__clips || !window.__clips.length) return;
+      clipIndex = ((i % window.__clips.length) + window.__clips.length) % window.__clips.length;
+      video.style.opacity = '0.15';
+      setTimeout(() => {
+        video.src = window.__clips[clipIndex];
+        video.play().catch(() => {});
+        video.style.opacity = '0.5';
+      }, 200);
+      [...switcher.querySelectorAll('button')].forEach((b, idx) => {
+        b.classList.toggle('active', idx === clipIndex);
+      });
+    }
+
+    function buildSwitcher(n) {
+      switcher.innerHTML = '';
+      for (let i = 0; i < n; i++) {
+        const b = document.createElement('button');
+        b.setAttribute('aria-label', 'Scene ' + (i + 1));
+        if (i === 0) b.classList.add('active');
+        b.addEventListener('click', () => setClip(i));
+        switcher.appendChild(b);
+      }
+    }
+
+    document.querySelectorAll('button[data-cmd]').forEach((b) => {
+      b.addEventListener('click', () => {
+        vscode.postMessage({ type: 'command', command: b.dataset.cmd });
+      });
+    });
+
+    document.getElementById('runDiagBtn').onclick = () => {
+      vscode.postMessage({ type: 'command', command: 'runDiagnostics' });
+    };
+    document.getElementById('createTestFileBtn').onclick = () => {
+      vscode.postMessage({ type: 'command', command: 'createDemoFile' });
+    };
+
+    window.addEventListener('message', (e) => {
+      const msg = e.data || {};
+      if (msg.type === 'init') {
+        window.__clips = msg.clips || [];
+        if (msg.logo) logo.src = msg.logo;
+        if (msg.panelArt) {
+          const art = document.getElementById('artPanel');
+          if (art) art.src = msg.panelArt;
+        }
+        buildSwitcher(window.__clips.length || 0);
+        setClip(0);
+        setInterval(() => setClip(clipIndex + 1), 14000);
+
+        // Display bridge HUD details & update checklist
+        const chkBridge = document.getElementById('chkBridge');
+        const chkMcp = document.getElementById('chkMcp');
+        const chkWorkspace = document.getElementById('chkWorkspace');
+
+        if (msg.bridgeUrl && msg.bridgeToken) {
+          const info = document.getElementById('bridgeInfo');
+          const urlEl = document.getElementById('bridgeUrl');
+          const btn = document.getElementById('copyTokenBtn');
+          if (info && urlEl && btn) {
+            urlEl.textContent = msg.bridgeUrl;
+            info.style.display = 'flex';
+            
+            // Hover styling
+            btn.onmouseover = () => {
+              btn.style.background = 'rgba(139, 92, 246, 0.3)';
+              btn.style.borderColor = 'rgba(139, 92, 246, 0.6)';
+            };
+            btn.onmouseout = () => {
+              btn.style.background = 'rgba(139, 92, 246, 0.1)';
+              btn.style.borderColor = 'rgba(139, 92, 246, 0.3)';
+            };
+            
+            // Click to copy
+            btn.onclick = () => {
+              navigator.clipboard.writeText(msg.bridgeToken);
+              btn.textContent = 'Copied!';
+              btn.style.background = 'rgba(34, 197, 94, 0.2)';
+              btn.style.borderColor = '#22c55e';
+              setTimeout(() => {
+                btn.textContent = 'Copy Token';
+                btn.style.background = 'rgba(139, 92, 246, 0.1)';
+                btn.style.borderColor = 'rgba(139, 92, 246, 0.3)';
+              }, 2000);
+            };
+          }
+
+          if (chkBridge) {
+            chkBridge.textContent = 'ACTIVE';
+            chkBridge.style.color = '#22c55e';
+          }
+          if (chkMcp) {
+            chkMcp.textContent = 'ACTIVE';
+            chkMcp.style.color = '#22c55e';
+          }
+        }
+
+        if (chkWorkspace) {
+          if (msg.workspaceName) {
+            chkWorkspace.textContent = msg.workspaceName.toUpperCase();
+            chkWorkspace.style.color = '#22c55e';
+          } else {
+            chkWorkspace.textContent = 'EMPTY';
+            chkWorkspace.style.color = '#ef4444';
+          }
+        }
+      } else if (msg.type === 'logAction') {
+        liveActionsQueue.push(msg.payload);
+        void processQueue();
+      }
+    });
+
+    // start typing sequences
+    typeTitle();
+    setTimeout(() => { typeTag(); }, 900);
+    setTimeout(() => { runTerminalDemoClean(); }, 500);
+  </script>
+</body>
+</html>

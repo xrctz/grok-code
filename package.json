@@ -1,0 +1,20 @@
+{
+  "name": "grok-code-playground",
+  "private": true,
+  "version": "0.3.1",
+  "description": "Grok Code — branded VS Code shell + MCP bridge playground",
+  "scripts": {
+    "build:bridge": "npm run compile --prefix vscode-mcp/extension",
+    "build:mcp": "npm run build --prefix vscode-mcp/mcp-server",
+    "build": "npm run build:bridge && npm run build:mcp",
+    "package:bridge": "npm run package --prefix vscode-mcp/extension",
+    "package:ui": "cd vscode-mcp/grok-code-ui && npx --yes @vscode/vsce package --no-dependencies --allow-missing-repository",
+    "package": "npm run package:bridge && npm run package:ui",
+    "test:no-copilot": "node scripts/test-grok-code-no-copilot.mjs",
+    "test:new-tools": "node scripts/test-grok-code-new-tools.mjs",
+    "test": "npm run build && npm run test:no-copilot && npm run test:new-tools",
+    "ensure-binary": "bash scripts/ensure-vscode-binary.sh",
+    "launch": "bash scripts/launch-grok-code.sh",
+    "mock-bridge": "node vscode-mcp/scripts/mock-bridge.mjs"
+  }
+}

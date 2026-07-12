@@ -1,0 +1,87 @@
+{
+  "name": "vscode-mcp-bridge",
+  "displayName": "Grok Code",
+  "description": "Grok Code live bridge \u2014 exposes the editor to Grok (and other MCP clients) over localhost HTTP. Same layout & wire protocol.",
+  "version": "0.1.4",
+  "publisher": "grok-labs",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other",
+    "AI"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "vscodeMcpBridge.start",
+        "title": "Grok Code: Start Bridge",
+        "category": "Grok Code"
+      },
+      {
+        "command": "vscodeMcpBridge.stop",
+        "title": "Grok Code: Stop Bridge",
+        "category": "Grok Code"
+      },
+      {
+        "command": "vscodeMcpBridge.copyToken",
+        "title": "Grok Code: Copy Bridge Token",
+        "category": "Grok Code"
+      },
+      {
+        "command": "vscodeMcpBridge.showStatus",
+        "title": "Grok Code: Bridge Status",
+        "category": "Grok Code"
+      }
+    ],
+    "configuration": {
+      "title": "Grok Code Bridge",
+      "properties": {
+        "vscodeMcpBridge.port": {
+          "type": "number",
+          "default": 7331,
+          "description": "Local HTTP port for the Grok Code bridge (127.0.0.1 only)."
+        },
+        "vscodeMcpBridge.host": {
+          "type": "string",
+          "default": "127.0.0.1",
+          "description": "Host interface to bind. Keep 127.0.0.1 for safety."
+        },
+        "vscodeMcpBridge.autoStart": {
+          "type": "boolean",
+          "default": true,
+          "description": "Start the Grok Code bridge automatically when the editor launches."
+        },
+        "vscodeMcpBridge.token": {
+          "type": "string",
+          "default": "",
+          "description": "Optional shared secret. If empty, a random token is generated per workspace and persisted."
+        },
+        "vscodeMcpBridge.autoRegisterMcp": {
+          "type": "boolean",
+          "default": false,
+          "description": "When true, write grok-code MCP server entries into ~/.grok/config.toml and Claude Desktop config (if present)."
+        },
+        "vscodeMcpBridge.mcpServerPath": {
+          "type": "string",
+          "default": "",
+          "description": "Absolute path to mcp-server/dist/index.js for auto-register. Empty = auto-detect near the extension."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "npm run compile && npx @vscode/vsce package --no-dependencies --allow-missing-repository"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.90.0",
+    "typescript": "^5.4.0"
+  }
+}

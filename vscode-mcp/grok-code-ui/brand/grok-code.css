@@ -1,0 +1,105 @@
+/* Grok Code — workbench chrome overrides (safe, non-destructive) */
+
+:root {
+  --grok-violet: #8b5cf6;
+  --grok-cyan: #67e8f9;
+  --grok-void: #050508;
+}
+
+.monaco-workbench {
+  --vscode-activityBar-background: #050508 !important;
+}
+
+.monaco-workbench .part.titlebar {
+  background: #050508 !important;
+}
+
+.monaco-workbench .activitybar {
+  border-color: #16161c !important;
+}
+
+.monaco-workbench .part.statusbar {
+  background: #050508 !important;
+  border-top: 1px solid #16161c !important;
+}
+
+.monaco-workbench .command-center-center {
+  border-radius: 999px !important;
+}
+
+.monaco-workbench .composite.title {
+  letter-spacing: 0.04em;
+}
+
+/* Empty editor = void nebula feel */
+.monaco-workbench .part.editor.empty {
+  background: radial-gradient(ellipse at 50% 30%, #1a1030 0%, #050508 55%) !important;
+}
+
+.monaco-workbench .tabs-container > .tab.active {
+  box-shadow: inset 0 2px 0 0 var(--grok-violet);
+}
+
+.monaco-scrollable-element > .scrollbar > .slider {
+  border-radius: 8px !important;
+}
+
+/* === Purge Copilot / Agent chat chrome (targeted, not whole layout) === */
+.monaco-workbench .part.auxiliarybar .composite.chat,
+.monaco-workbench .part.auxiliarybar .pane-body.chat-view,
+.monaco-workbench .interactive-session,
+.monaco-workbench .chat-welcome-view,
+.monaco-workbench .chat-view-welcome,
+.monaco-workbench .chat-welcome-view-container,
+.monaco-workbench [class*="chat-welcome"],
+.monaco-workbench .codicon-copilot,
+.monaco-workbench .codicon-chat-sparkle,
+.monaco-workbench .action-label[aria-label*="Copilot" i],
+.monaco-workbench .action-item[aria-label*="Copilot" i],
+.monaco-workbench .action-label[aria-label*="Build with Agent" i],
+.monaco-workbench .status-bar [id*="copilot" i],
+.monaco-workbench .command-center .codicon-copilot {
+  display: none !important;
+}
+
+/* Dim stock account marketing */
+.monaco-workbench .codicon-vscode-account {
+  opacity: 0.55;
+}
+
+/* Hide feedback buttons in status bar */
+.monaco-workbench .part.statusbar .statusbar-item[id*="feedback" i],
+.monaco-workbench .part.statusbar .statusbar-item[id*="telemetry" i] {
+  display: none !important;
+}
+
+/* Hide Accounts entry and icon in activitybar, titlebar, and anywhere else */
+.monaco-workbench [id*="accounts" i],
+.monaco-workbench [aria-label*="Accounts" i],
+.monaco-workbench [title*="Accounts" i],
+.monaco-workbench .codicon-account,
+.monaco-workbench .accounts-activity-action {
+  display: none !important;
+}
+
+/* Hide Settings entry and icon in activitybar, titlebar, and anywhere else */
+.monaco-workbench [id*="preferences" i],
+.monaco-workbench [aria-label*="Settings" i],
+.monaco-workbench [title*="Settings" i],
+.monaco-workbench .codicon-settings-gear,
+.monaco-workbench .codicon-settings {
+  display: none !important;
+}
+
+/* Hide default getting started / walkthrough container from upstream */
+.monaco-workbench .gettingStartedContainer .index-list {
+  display: none !important;
+}
+
+/* Hide Settings Sync and Authentication status bar elements */
+.monaco-workbench .part.statusbar .statusbar-item[id*="sync" i],
+.monaco-workbench .part.statusbar .statusbar-item[id*="settingsSync" i],
+.monaco-workbench .part.statusbar .statusbar-item[id*="auth" i],
+.monaco-workbench .part.statusbar .statusbar-item[id*="account" i] {
+  display: none !important;
+}

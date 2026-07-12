@@ -1,0 +1,122 @@
+{
+  "name": "grok-code-ui",
+  "displayName": "Grok Code",
+  "description": "Grok Code shell v0.3.1 \u2014 Home Stage, Bridge panel, Copilot stripped, custom chrome.",
+  "version": "0.3.1",
+  "publisher": "grok-labs",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Themes",
+    "Other"
+  ],
+  "keywords": [
+    "grok",
+    "xai",
+    "theme",
+    "branding"
+  ],
+  "icon": "media/icon-256.png",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "themes": [
+      {
+        "label": "Grok Code Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/grok-code-dark.json"
+      },
+      {
+        "label": "Grok Code Void",
+        "uiTheme": "vs-dark",
+        "path": "./themes/grok-code-void.json"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "grokCode",
+          "title": "Grok Code",
+          "icon": "media/code-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "grokCode": [
+        {
+          "type": "webview",
+          "id": "grokCode.homeView",
+          "name": "Home"
+        },
+        {
+          "type": "webview",
+          "id": "grok-code.sidebar-chat",
+          "name": "Bridge",
+          "visibility": "visible"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "grokCode.applyLayout",
+        "title": "Grok Code: Apply Full Layout",
+        "category": "Grok Code"
+      },
+      {
+        "command": "grokCode.openHome",
+        "title": "Grok Code: Open Home Stage",
+        "category": "Grok Code"
+      },
+      {
+        "command": "grokCode.showAbout",
+        "title": "Grok Code: About",
+        "category": "Grok Code"
+      }
+    ],
+    "configuration": {
+      "title": "Grok Code",
+      "properties": {
+        "grokCode.autoApplyLayout": {
+          "type": "boolean",
+          "default": true,
+          "description": "Apply Grok Code layout settings on startup."
+        },
+        "grokCode.openHomeOnStartup": {
+          "type": "boolean",
+          "default": true,
+          "description": "Open the cinematic Grok Code home stage on startup."
+        }
+      }
+    },
+    "walkthroughs": [
+      {
+        "id": "grokCode.welcome",
+        "title": "Welcome to Grok Code",
+        "description": "Your custom AI editor \u2014 not stock VS Code.",
+        "steps": [
+          {
+            "id": "home",
+            "title": "Open the Home Stage",
+            "description": "Cinematic AI art and motion built for Grok Code.\n[Open Home](command:grokCode.openHome)",
+            "media": {
+              "image": "media/splash-editor.jpg",
+              "altText": "Grok Code splash art"
+            }
+          },
+          {
+            "id": "layout",
+            "title": "Apply the Grok layout",
+            "description": "Top activity bar, void chrome, violet accent.\n[Apply Layout](command:grokCode.applyLayout)",
+            "media": {
+              "image": "media/hero-core.jpg",
+              "altText": "Grok Code hero"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

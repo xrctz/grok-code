@@ -1,0 +1,28 @@
+{
+  "name": "vscode-mcp-server",
+  "version": "0.1.2",
+  "description": "Grok Code MCP server \u2014 controls a live Grok Code window via the Grok Code bridge (same wire layout)",
+  "type": "module",
+  "bin": {
+    "vscode-mcp-server": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsc -p ./",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "typecheck": "tsc -p ./ --noEmit"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.4.0"
+  }
+}
