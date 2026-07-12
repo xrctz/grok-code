@@ -19,7 +19,7 @@ This workspace is a playground that:
 ├── vscode-src/               ← Code - OSS (~1.129) + product.json rebrand
 └── vscode-mcp/               ← bridge · MCP server · UI pack
     ├── extension/            ← HTTP bridge :7331 (v0.1.4)
-    ├── grok-code-ui/         ← themes + Home Stage + Command panel (v0.4.0)
+    ├── grok-code-ui/         ← themes + Home Stage + embedded Grok Build (v0.5.0)
     ├── mcp-server/           ← MCP tools for Grok (v0.1.2)
     └── scripts/mock-bridge.mjs
 ```
@@ -75,7 +75,23 @@ The launcher:
 
 Override paths with `GROK_CODE_APP`, `GROK_CODE_CACHE`, or `CODE_BIN`. Re-download with `./scripts/ensure-vscode-binary.sh --force`.
 
-Agent control is via **MCP tools** (see `vscode-mcp/README.md`) — in-editor “Grok Chat” is a **Bridge status panel**; talk to Grok in the TUI and use `vscode_*` tools.
+Agent control is via **MCP tools** (see `vscode-mcp/README.md`). Grok Build runs **inside** Grok Code’s integrated terminal so you can talk to the agent and it can drive the editor with `vscode_*` tools.
+
+**Claude Code** is also supported as a second agent terminal (button only — never auto-boots). Use **Open Claude Code** in the Command sidebar, the Home nav **Claude** button, or command palette **Grok Code: Open Claude Code Terminal**. That launches your repo’s `launch-claude.sh` (custom Claude provider) and refreshes the `grok-code` MCP entry so Claude can drive this window too.
+
+### One-word launch: `grok`
+
+```bash
+# Install shell wrapper (once) — bare `grok` opens Grok Code + embedded Grok Build
+./scripts/install-grok-shell.sh
+source ~/.bashrc
+
+grok                   # Grok Code window + Grok Build terminal (auto-approve agent)
+grok "fix the tests"   # same, with an initial prompt
+grok --standalone      # classic terminal-only Grok Build TUI
+```
+
+On startup the UI pack opens a **Grok Build** panel terminal (`--always-approve` by default) wired to the bridge MCP so the agent can edit files, run shell commands, and control the window automatically.
 
 ### Smoke test without VS Code UI
 

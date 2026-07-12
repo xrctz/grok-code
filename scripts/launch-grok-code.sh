@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 # Launch Grok Code (VS Code binary / OSS shell) with Copilot hard-disabled.
+# When GROK_CODE_OPEN_AGENT=1 (set by the bare `grok` wrapper), the UI extension
+# embeds Grok Build in the integrated terminal so the agent can drive the app.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -9,6 +11,10 @@ SETTINGS_DIR="$USER_DATA/User"
 SETTINGS_FILE="$SETTINGS_DIR/settings.json"
 DEFAULT_SETTINGS="$ROOT/scripts/default-user-settings.json"
 ENSURE="$ROOT/scripts/ensure-vscode-binary.sh"
+
+# Make MCP auto-discovery + shell wrappers resolve this clone
+export GROK_CODE_ROOT="${GROK_CODE_ROOT:-$ROOT}"
+export GROK_REAL_BIN="${GROK_REAL_BIN:-$HOME/.grok/bin/grok}"
 
 # Pick newest matching VSIX by version-ish sort of filename
 latest_vsix() {
@@ -78,6 +84,9 @@ FORCE_OFF = {
     # Keep Grok Code Browser interactive (toasts pause it)
     "notifications.doNotDisturbMode": True,
     "simpleBrowser.focusLockIndicator.enabled": False,
+    # Embed Grok Build so the agent can work in-app
+    "grokCode.openGrokTerminalOnStartup": True,
+    "grokCode.alwaysApproveAgent": True,
 }
 # Empty string token in defaults should not wipe a real token
 if defaults.get("vscodeMcpBridge.token") == "":
@@ -121,6 +130,28 @@ else
   echo "Warning: no grok-code-ui-*.vsix found under vscode-mcp/grok-code-ui/" >&2
 fi
 
+# Export for the Electron process (extension reads these). Avoid `env VAR=`
+# with empty values — they can confuse arg parsing with paths that have spaces.
+export GROK_CODE_ROOT
+export GROK_REAL_BIN
+export GROK_CODE_OPEN_AGENT="${GROK_CODE_OPEN_AGENT:-1}"
+export GROK_CODE_CWD="${GROK_CODE_CWD:-$(pwd)}"
+if [[ -n "${GROK_CODE_AGENT_PROMPT_FILE:-}" ]]; then
+  export GROK_CODE_AGENT_PROMPT_FILE
+else
+  unset GROK_CODE_AGENT_PROMPT_FILE || true
+fi
+
+if [[ "$GROK_CODE_OPEN_AGENT" == "1" || "$GROK_CODE_OPEN_AGENT" == "true" ]]; then
+  echo "Grok Build will open inside Grok Code (agent can drive the app via MCP)." >&2
+fi
+
+# Default workspace = current dir when no path args were given
+ARGS=("$@")
+if [[ ${#ARGS[@]} -eq 0 && -n "${GROK_CODE_CWD:-}" && -d "${GROK_CODE_CWD}" ]]; then
+  ARGS=("$GROK_CODE_CWD")
+fi
+
 exec "$CODE_BIN" \
   --user-data-dir "$USER_DATA" \
   --extensions-dir "$EXT_DIR" \
@@ -130,4 +161,4 @@ exec "$CODE_BIN" \
   --disable-extension GitHub.copilot-chat-cf \
   --no-sandbox \
   --disable-gpu-sandbox \
-  "$@"
+  "${ARGS[@]}"

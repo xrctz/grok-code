@@ -1,8 +1,8 @@
 {
   "name": "grok-code-ui",
   "displayName": "Grok Code",
-  "description": "Grok Code shell v0.4.0 — custom UI, Home Stage, Bridge panel, no stock VS Code chrome.",
-  "version": "0.4.0",
+  "description": "Grok Code shell v0.5.1 — custom UI, Grok Build + optional Claude Code terminals, Home Stage, Bridge panel.",
+  "version": "0.5.1",
   "publisher": "grok-labs",
   "engines": {
     "vscode": "^1.90.0"
@@ -78,6 +78,16 @@
         "category": "Grok Code"
       },
       {
+        "command": "grokCode.openGrokTerminal",
+        "title": "Grok Code: Open Grok Build Terminal",
+        "category": "Grok Code"
+      },
+      {
+        "command": "grokCode.openClaudeTerminal",
+        "title": "Grok Code: Open Claude Code Terminal",
+        "category": "Grok Code"
+      },
+      {
         "command": "grokCode.showAbout",
         "title": "Grok Code: About",
         "category": "Grok Code"
@@ -95,6 +105,27 @@
           "type": "boolean",
           "default": true,
           "description": "Open the cinematic Grok Code home stage on startup."
+        },
+        "grokCode.openGrokTerminalOnStartup": {
+          "type": "boolean",
+          "default": true,
+          "description": "Open the embedded Grok Build terminal on startup so you can talk to the agent inside Grok Code."
+        },
+        "grokCode.alwaysApproveAgent": {
+          "type": "boolean",
+          "default": true,
+          "description": "Pass --always-approve so the agent can edit files and run tools without interactive permission prompts."
+        },
+        "grokCode.grokTerminalArgs": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "Extra CLI args passed to the embedded Grok Build process."
+        },
+        "grokCode.claudeLaunchScript": {
+          "type": "string",
+          "default": "",
+          "description": "Absolute path to launch-claude.sh (custom Claude CLI → Grok Code). Empty = auto-discover from GROK_CODE_ROOT / workspace. Claude terminal never auto-boots — use the button or command palette."
         }
       }
     },

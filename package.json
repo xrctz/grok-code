@@ -1,12 +1,13 @@
 {
   "name": "grok-code-playground",
   "private": true,
-  "version": "0.3.1",
-  "description": "Grok Code — branded VS Code shell + MCP bridge playground",
+  "version": "0.5.1",
+  "description": "Grok Code — branded VS Code shell + embedded Grok Build + optional Claude Code terminal + MCP bridge",
   "scripts": {
     "install:bridge": "npm install --prefix vscode-mcp/extension",
     "install:mcp": "npm install --prefix vscode-mcp/mcp-server",
     "install:all": "npm run install:bridge && npm run install:mcp && npm run build",
+    "install:shell": "bash scripts/install-grok-shell.sh",
     "build:bridge": "npm run compile --prefix vscode-mcp/extension",
     "build:mcp": "npm run build --prefix vscode-mcp/mcp-server",
     "build": "npm run build:bridge && npm run build:mcp",

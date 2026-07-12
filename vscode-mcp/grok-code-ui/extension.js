@@ -1,6 +1,13 @@
 const vscode = require("vscode");
 const path = require("path");
 const fs = require("fs");
+const os = require("os");
+
+/** Integrated terminal name for the embedded Grok Build TUI */
+const GROK_BUILD_TERMINAL_NAME = "Grok Build";
+
+/** Integrated terminal name for the optional Claude Code CLI (button-only, no auto-boot) */
+const CLAUDE_TERMINAL_NAME = "Claude Code";
 
 /** Grok Code layout — custom shell, not stock VS Code */
 const GROK_LAYOUT = {
@@ -95,8 +102,9 @@ function activate(context) {
     10000
   );
   status.text = "$(sparkle) Grok Code";
-  status.tooltip = "Grok Code — custom AI editor shell · open home stage";
-  status.command = "grokCode.openHome";
+  status.tooltip =
+    "Grok Code — open Grok Build terminal (talk to agent · drives this app via MCP)";
+  status.command = "grokCode.openGrokTerminal";
   status.show();
   context.subscriptions.push(status);
 
@@ -104,7 +112,7 @@ function activate(context) {
   setTimeout(() => {
     status.text = "$(sparkle) Grok Code · ready";
     setTimeout(() => {
-      status.text = "$(sparkle) Grok Code";
+      status.text = "$(sparkle) Grok Build";
     }, 3500);
   }, 1500);
 
@@ -141,15 +149,47 @@ function activate(context) {
   );
 
   context.subscriptions.push(
+    vscode.commands.registerCommand("grokCode.openGrokTerminal", async () => {
+      const ok = await openGrokBuildTerminal();
+      if (ok) {
+        status.text = "$(sparkle) Grok Build · live";
+        vscode.window.setStatusBarMessage(
+          "$(sparkle) Grok Build terminal — agent can drive this app via vscode_* MCP tools",
+          5000
+        );
+      }
+    })
+  );
+
+  // Claude Code terminal — button/command only (never auto-boots on startup)
+  context.subscriptions.push(
+    vscode.commands.registerCommand("grokCode.openClaudeTerminal", async () => {
+      const ok = await openClaudeTerminal();
+      if (ok) {
+        vscode.window.setStatusBarMessage(
+          "$(comment-discussion) Claude Code terminal — custom Claude CLI wired to Grok Code MCP bridge",
+          5000
+        );
+      }
+    })
+  );
+
+  context.subscriptions.push(
     vscode.commands.registerCommand("grokCode.showAbout", () => {
       vscode.window
         .showInformationMessage(
-          "Grok Code — fully custom shell. Art, motion, typing stage. No Copilot.",
+          "Grok Code — custom shell with embedded Grok Build + optional Claude Code terminal. Agents drive the editor via MCP. No Copilot.",
+          "Open Grok Build",
+          "Open Claude",
           "Open Home",
           "Apply Layout"
         )
         .then((choice) => {
-          if (choice === "Open Home") {
+          if (choice === "Open Grok Build") {
+            vscode.commands.executeCommand("grokCode.openGrokTerminal");
+          } else if (choice === "Open Claude") {
+            vscode.commands.executeCommand("grokCode.openClaudeTerminal");
+          } else if (choice === "Open Home") {
             vscode.commands.executeCommand("grokCode.openHome");
           } else if (choice === "Apply Layout") {
             vscode.commands.executeCommand("grokCode.applyLayout");
@@ -189,6 +229,21 @@ function activate(context) {
       openHomePanel(context);
       closeCopilotChrome().catch(() => {});
     }, 1400);
+  }
+
+  // Embed Grok Build TUI in the integrated terminal so you can talk to the agent
+  // and it can work automatically in this app via the grok-code MCP bridge.
+  const openAgentEnv =
+    process.env.GROK_CODE_OPEN_AGENT === "1" ||
+    process.env.GROK_CODE_OPEN_AGENT === "true";
+  const autoGrok = vscode.workspace
+    .getConfiguration("grokCode")
+    .get("openGrokTerminalOnStartup", true);
+  if (autoGrok || openAgentEnv) {
+    // Wait for bridge extension to bind :7331 and write .vscode-mcp.env
+    setTimeout(() => {
+      openGrokBuildTerminal().catch(() => {});
+    }, openAgentEnv ? 2200 : 2800);
   }
 }
 
@@ -276,6 +331,14 @@ function openHomePanel(context) {
         break;
       case "openTerminal":
         await vscode.commands.executeCommand("workbench.action.terminal.toggleTerminal");
+        break;
+      case "openGrokBuild":
+      case "openGrokTerminal":
+        await vscode.commands.executeCommand("grokCode.openGrokTerminal");
+        break;
+      case "openClaude":
+      case "openClaudeTerminal":
+        await vscode.commands.executeCommand("grokCode.openClaudeTerminal");
         break;
       case "copyBridgeToken":
         try {
@@ -540,6 +603,14 @@ class GrokSidebarProvider {
         case "openHome":
           await vscode.commands.executeCommand("grokCode.openHome");
           break;
+        case "openGrokBuild":
+        case "openGrokTerminal":
+          await vscode.commands.executeCommand("grokCode.openGrokTerminal");
+          break;
+        case "openClaude":
+        case "openClaudeTerminal":
+          await vscode.commands.executeCommand("grokCode.openClaudeTerminal");
+          break;
         default:
           break;
       }
@@ -605,6 +676,472 @@ async function applyLayout() {
   }
 }
 
+/**
+ * Resolve the real Grok Build binary (not a shell wrapper that re-launches the IDE).
+ * @returns {string | undefined}
+ */
+function resolveGrokBinary() {
+  const home = os.homedir();
+  const candidates = [
+    process.env.GROK_REAL_BIN,
+    process.env.GROK_BIN,
+    path.join(home, ".grok", "bin", "grok"),
+    "/usr/local/bin/grok",
+    "/usr/bin/grok",
+  ].filter(Boolean);
+
+  for (const c of candidates) {
+    try {
+      if (c && fs.existsSync(c) && fs.statSync(c).isFile()) {
+        // Skip our own wrapper if it somehow ends up first
+        const text = safeReadHead(c, 400);
+        if (text && text.includes("GROK_CODE_LAUNCHER_WRAPPER")) {
+          continue;
+        }
+        return c;
+      }
+    } catch {
+      /* try next */
+    }
+  }
+
+  // Last resort: PATH lookup via which (may be the wrapper — still usable with GROK_CODE_EMBEDDED=1)
+  return "grok";
+}
+
+/**
+ * @param {string} file
+ * @param {number} n
+ */
+function safeReadHead(file, n) {
+  try {
+    const fd = fs.openSync(file, "r");
+    const buf = Buffer.alloc(n);
+    const read = fs.readSync(fd, buf, 0, n, 0);
+    fs.closeSync(fd);
+    return buf.slice(0, read).toString("utf8");
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * Env for the embedded Grok Build process so MCP can reach this editor.
+ * @returns {Record<string, string>}
+ */
+function buildGrokTerminalEnv() {
+  /** @type {Record<string, string>} */
+  const env = {};
+  // Copy process env (VS Code requires string values)
+  for (const [k, v] of Object.entries(process.env)) {
+    if (typeof v === "string") env[k] = v;
+  }
+
+  // Critical: prevent shell wrapper from re-launching Grok Code
+  env.GROK_CODE_EMBEDDED = "1";
+  env.TERM = env.TERM || "xterm-256color";
+  env.COLORTERM = env.COLORTERM || "truecolor";
+
+  const bridge = getActiveBridgeConfig();
+  if (bridge) {
+    if (bridge.VSCODE_MCP_HOST) env.VSCODE_MCP_HOST = bridge.VSCODE_MCP_HOST;
+    if (bridge.VSCODE_MCP_PORT) env.VSCODE_MCP_PORT = bridge.VSCODE_MCP_PORT;
+    if (bridge.VSCODE_MCP_TOKEN) env.VSCODE_MCP_TOKEN = bridge.VSCODE_MCP_TOKEN;
+    if (bridge.VSCODE_MCP_URL) env.VSCODE_MCP_URL = bridge.VSCODE_MCP_URL;
+  } else {
+    env.VSCODE_MCP_HOST = env.VSCODE_MCP_HOST || "127.0.0.1";
+    env.VSCODE_MCP_PORT = env.VSCODE_MCP_PORT || "7331";
+  }
+
+  if (process.env.GROK_CODE_ROOT) {
+    env.GROK_CODE_ROOT = process.env.GROK_CODE_ROOT;
+  }
+
+  return env;
+}
+
+/**
+ * Open (or focus) an integrated terminal running Grok Build so the agent
+ * can talk to you and drive Grok Code via vscode_* MCP tools.
+ * @returns {Promise<boolean>}
+ */
+async function openGrokBuildTerminal() {
+  const existing = vscode.window.terminals.find(
+    (t) => t.name === GROK_BUILD_TERMINAL_NAME
+  );
+  if (existing) {
+    existing.show(true);
+    return true;
+  }
+
+  const grokBin = resolveGrokBinary();
+  const cfg = vscode.workspace.getConfiguration("grokCode");
+  const alwaysApprove = cfg.get("alwaysApproveAgent", true);
+  const extraArgs = cfg.get("grokTerminalArgs", []);
+  /** @type {string[]} */
+  const shellArgs = [];
+  if (alwaysApprove) {
+    shellArgs.push("--always-approve");
+  }
+  if (Array.isArray(extraArgs)) {
+    for (const a of extraArgs) {
+      if (typeof a === "string" && a.trim()) shellArgs.push(a.trim());
+    }
+  }
+
+  // Optional one-shot prompt from bare `grok "…"` launcher
+  const promptFile = process.env.GROK_CODE_AGENT_PROMPT_FILE;
+  if (promptFile && fs.existsSync(promptFile)) {
+    try {
+      const prompt = fs.readFileSync(promptFile, "utf8").trim();
+      if (prompt) shellArgs.push(prompt);
+      fs.unlinkSync(promptFile);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  const folders = vscode.workspace.workspaceFolders;
+  const cwd =
+    (folders && folders.length && folders[0].uri.fsPath) ||
+    process.env.GROK_CODE_CWD ||
+    undefined;
+
+  try {
+    const terminal = vscode.window.createTerminal({
+      name: GROK_BUILD_TERMINAL_NAME,
+      shellPath: grokBin,
+      shellArgs,
+      cwd,
+      env: buildGrokTerminalEnv(),
+      message: "Grok Build · agent can edit files, run commands, and drive this window via MCP",
+      isTransient: false,
+    });
+    terminal.show(true);
+    return true;
+  } catch (err) {
+    // Fallback: default shell + sendText (works if shellPath launch fails)
+    try {
+      const terminal = vscode.window.createTerminal({
+        name: GROK_BUILD_TERMINAL_NAME,
+        cwd,
+        env: buildGrokTerminalEnv(),
+      });
+      terminal.show(true);
+      const q = (s) => `'${String(s).replace(/'/g, `'\\''`)}'`;
+      const cmd = [q(grokBin), ...shellArgs.map(q)].join(" ");
+      terminal.sendText(cmd, true);
+      return true;
+    } catch (err2) {
+      const msg = err2 instanceof Error ? err2.message : String(err2 || err);
+      vscode.window.setStatusBarMessage(
+        `Could not start Grok Build: ${msg}`,
+        8000
+      );
+      return false;
+    }
+  }
+}
+
+/**
+ * Resolve launch-claude.sh (user's custom Claude → Grok Code launcher).
+ * @returns {string | undefined}
+ */
+function resolveClaudeLaunchScript() {
+  const cfg = vscode.workspace.getConfiguration("grokCode");
+  const configured = cfg.get("claudeLaunchScript", "");
+  const home = os.homedir();
+  const folders = vscode.workspace.workspaceFolders;
+  const workspaceRoot =
+    folders && folders.length ? folders[0].uri.fsPath : undefined;
+
+  const candidates = [
+    typeof configured === "string" && configured.trim() ? configured.trim() : null,
+    process.env.GROK_CODE_CLAUDE_LAUNCH,
+    process.env.GROK_CODE_ROOT
+      ? path.join(process.env.GROK_CODE_ROOT, "launch-claude.sh")
+      : null,
+    workspaceRoot ? path.join(workspaceRoot, "launch-claude.sh") : null,
+    path.join(home, "Desktop", "Grok Code (Open Source)", "launch-claude.sh"),
+    path.join(home, ".grok-code-app", "launch-claude.sh"),
+  ].filter(Boolean);
+
+  for (const c of candidates) {
+    try {
+      if (c && fs.existsSync(c) && fs.statSync(c).isFile()) {
+        return c;
+      }
+    } catch {
+      /* try next */
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Resolve claude CLI binary on PATH / common install locations.
+ * @returns {string}
+ */
+function resolveClaudeBinary() {
+  const home = os.homedir();
+  const candidates = [
+    process.env.CLAUDE_BIN,
+    path.join(home, ".npm-global", "bin", "claude"),
+    path.join(home, ".local", "bin", "claude"),
+    "/usr/local/bin/claude",
+    "/usr/bin/claude",
+  ].filter(Boolean);
+
+  for (const c of candidates) {
+    try {
+      if (c && fs.existsSync(c) && fs.statSync(c).isFile()) {
+        return c;
+      }
+    } catch {
+      /* try next */
+    }
+  }
+  return "claude";
+}
+
+/**
+ * Resolve mcp-server entry for Claude ↔ Grok Code bridge.
+ * @returns {string | undefined}
+ */
+function resolveMcpServerEntry() {
+  const home = os.homedir();
+  const folders = vscode.workspace.workspaceFolders;
+  const workspaceRoot =
+    folders && folders.length ? folders[0].uri.fsPath : undefined;
+
+  const candidates = [
+    process.env.GROK_CODE_ROOT
+      ? path.join(
+          process.env.GROK_CODE_ROOT,
+          "vscode-mcp",
+          "mcp-server",
+          "dist",
+          "index.js"
+        )
+      : null,
+    workspaceRoot
+      ? path.join(workspaceRoot, "vscode-mcp", "mcp-server", "dist", "index.js")
+      : null,
+    path.join(
+      home,
+      "Desktop",
+      "Grok Code (Open Source)",
+      "vscode-mcp",
+      "mcp-server",
+      "dist",
+      "index.js"
+    ),
+  ].filter(Boolean);
+
+  for (const c of candidates) {
+    try {
+      if (c && fs.existsSync(c) && fs.statSync(c).isFile()) {
+        return c;
+      }
+    } catch {
+      /* try next */
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Ensure Claude Code's global MCP config points at this Grok Code bridge
+ * (token + correct mcp-server path) so Claude can drive the editor.
+ * Best-effort; never throws.
+ */
+function ensureClaudeGrokCodeMcp() {
+  try {
+    const serverEntry = resolveMcpServerEntry();
+    if (!serverEntry) return;
+
+    const bridge = getActiveBridgeConfig() || {};
+    const host = bridge.VSCODE_MCP_HOST || "127.0.0.1";
+    const port = bridge.VSCODE_MCP_PORT || "7331";
+    const token = bridge.VSCODE_MCP_TOKEN || "";
+    const url = bridge.VSCODE_MCP_URL || `http://${host}:${port}`;
+
+    const claudeJson = path.join(os.homedir(), ".claude.json");
+    let config = {};
+    if (fs.existsSync(claudeJson)) {
+      try {
+        config = JSON.parse(fs.readFileSync(claudeJson, "utf8"));
+      } catch {
+        return;
+      }
+    }
+    if (!config || typeof config !== "object") config = {};
+    if (!config.mcpServers || typeof config.mcpServers !== "object") {
+      config.mcpServers = {};
+    }
+
+    /** @type {Record<string, string>} */
+    const env = {
+      VSCODE_MCP_HOST: host,
+      VSCODE_MCP_PORT: String(port),
+      VSCODE_MCP_URL: url,
+    };
+    if (token) env.VSCODE_MCP_TOKEN = token;
+
+    config.mcpServers["grok-code"] = {
+      type: "stdio",
+      command: "node",
+      args: [serverEntry],
+      env,
+    };
+
+    fs.writeFileSync(claudeJson, JSON.stringify(config, null, 2) + "\n", {
+      encoding: "utf8",
+      mode: 0o600,
+    });
+  } catch {
+    /* ignore — Claude still launches; MCP may need manual setup */
+  }
+}
+
+/**
+ * Env for the Claude Code integrated terminal (bridge + PATH for custom CLI).
+ * Does not hardcode API keys — launch-claude.sh / ~/.claude/settings.json own those.
+ * @returns {Record<string, string>}
+ */
+function buildClaudeTerminalEnv() {
+  /** @type {Record<string, string>} */
+  const env = {};
+  for (const [k, v] of Object.entries(process.env)) {
+    if (typeof v === "string") env[k] = v;
+  }
+
+  const home = os.homedir();
+  const pathParts = [
+    path.join(home, ".npm-global", "bin"),
+    path.join(home, ".local", "bin"),
+    env.PATH || "",
+  ].filter(Boolean);
+  env.PATH = pathParts.join(path.delimiter);
+
+  env.TERM = env.TERM || "xterm-256color";
+  env.COLORTERM = env.COLORTERM || "truecolor";
+
+  const bridge = getActiveBridgeConfig();
+  if (bridge) {
+    if (bridge.VSCODE_MCP_HOST) env.VSCODE_MCP_HOST = bridge.VSCODE_MCP_HOST;
+    if (bridge.VSCODE_MCP_PORT) env.VSCODE_MCP_PORT = bridge.VSCODE_MCP_PORT;
+    if (bridge.VSCODE_MCP_TOKEN) env.VSCODE_MCP_TOKEN = bridge.VSCODE_MCP_TOKEN;
+    if (bridge.VSCODE_MCP_URL) env.VSCODE_MCP_URL = bridge.VSCODE_MCP_URL;
+  } else {
+    env.VSCODE_MCP_HOST = env.VSCODE_MCP_HOST || "127.0.0.1";
+    env.VSCODE_MCP_PORT = env.VSCODE_MCP_PORT || "7331";
+  }
+
+  if (process.env.GROK_CODE_ROOT) {
+    env.GROK_CODE_ROOT = process.env.GROK_CODE_ROOT;
+  }
+
+  return env;
+}
+
+/**
+ * Open (or focus) an integrated terminal running the user's custom Claude Code
+ * launcher (launch-claude.sh). Never auto-starts — button/command only.
+ * @returns {Promise<boolean>}
+ */
+async function openClaudeTerminal() {
+  const existing = vscode.window.terminals.find(
+    (t) => t.name === CLAUDE_TERMINAL_NAME
+  );
+  if (existing) {
+    existing.show(true);
+    return true;
+  }
+
+  // Wire Claude → Grok Code MCP so the agent can use vscode_* tools
+  ensureClaudeGrokCodeMcp();
+
+  const folders = vscode.workspace.workspaceFolders;
+  const cwd =
+    (folders && folders.length && folders[0].uri.fsPath) ||
+    process.env.GROK_CODE_CWD ||
+    undefined;
+
+  const script = resolveClaudeLaunchScript();
+  const env = buildClaudeTerminalEnv();
+  const bash = process.env.SHELL && process.env.SHELL.includes("bash")
+    ? process.env.SHELL
+    : "/bin/bash";
+
+  try {
+    if (script) {
+      const terminal = vscode.window.createTerminal({
+        name: CLAUDE_TERMINAL_NAME,
+        shellPath: bash,
+        shellArgs: [script, cwd || "."],
+        cwd,
+        env,
+        message:
+          "Claude Code · custom CLI → Grok Code MCP bridge (button launch, no auto-boot)",
+        isTransient: false,
+      });
+      terminal.show(true);
+      return true;
+    }
+
+    // Fallback: claude CLI directly with bypass flags (same spirit as launch-claude.sh)
+    const claudeBin = resolveClaudeBinary();
+    const terminal = vscode.window.createTerminal({
+      name: CLAUDE_TERMINAL_NAME,
+      shellPath: claudeBin,
+      shellArgs: [
+        "--dangerously-skip-permissions",
+        "--permission-mode",
+        "bypassPermissions",
+      ],
+      cwd,
+      env,
+      message:
+        "Claude Code · launched without launch-claude.sh (set grokCode.claudeLaunchScript if needed)",
+      isTransient: false,
+    });
+    terminal.show(true);
+    return true;
+  } catch (err) {
+    try {
+      const terminal = vscode.window.createTerminal({
+        name: CLAUDE_TERMINAL_NAME,
+        cwd,
+        env,
+      });
+      terminal.show(true);
+      const q = (s) => `'${String(s).replace(/'/g, `'\\''`)}'`;
+      if (script) {
+        terminal.sendText(`${q(bash)} ${q(script)} ${q(cwd || ".")}`, true);
+      } else {
+        const claudeBin = resolveClaudeBinary();
+        terminal.sendText(
+          `${q(claudeBin)} --dangerously-skip-permissions --permission-mode bypassPermissions`,
+          true
+        );
+      }
+      return true;
+    } catch (err2) {
+      const msg = err2 instanceof Error ? err2.message : String(err2 || err);
+      vscode.window.showWarningMessage(`Could not start Claude Code: ${msg}`);
+      return false;
+    }
+  }
+}
+
 function deactivate() {}
 
-module.exports = { activate, deactivate };
+module.exports = {
+  activate,
+  deactivate,
+  openGrokBuildTerminal,
+  openClaudeTerminal,
+  resolveGrokBinary,
+  resolveClaudeLaunchScript,
+};

@@ -26,6 +26,8 @@
   "vscodeMcpBridge.autoRegisterMcp": false,
   "grokCode.autoApplyLayout": true,
   "grokCode.openHomeOnStartup": true,
+  "grokCode.openGrokTerminalOnStartup": true,
+  "grokCode.alwaysApproveAgent": true,
   "window.autoDetectColorScheme": false,
   "window.density.editorTabHeight": "compact",
   "workbench.sideBar.location": "left",
