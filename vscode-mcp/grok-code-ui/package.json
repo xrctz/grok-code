@@ -1,8 +1,8 @@
 {
   "name": "grok-code-ui",
   "displayName": "Grok Code",
-  "description": "Grok Code shell v0.3.1 \u2014 Home Stage, Bridge panel, Copilot stripped, custom chrome.",
-  "version": "0.3.1",
+  "description": "Grok Code shell v0.4.0 — custom UI, Home Stage, Bridge panel, no stock VS Code chrome.",
+  "version": "0.4.0",
   "publisher": "grok-labs",
   "engines": {
     "vscode": "^1.90.0"
@@ -35,6 +35,13 @@
         "path": "./themes/grok-code-void.json"
       }
     ],
+    "iconThemes": [
+      {
+        "id": "grok-code-icons",
+        "label": "Grok Code Icons",
+        "path": "./themes/grok-code-icons.json"
+      }
+    ],
     "viewsContainers": {
       "activitybar": [
         {
@@ -54,7 +61,7 @@
         {
           "type": "webview",
           "id": "grok-code.sidebar-chat",
-          "name": "Bridge",
+          "name": "Command",
           "visibility": "visible"
         }
       ]

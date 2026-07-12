@@ -26,7 +26,64 @@
     }
     body {
       display: grid;
+      grid-template-rows: 1fr;
+      grid-template-columns: 72px 1fr;
+    }
+
+    /* ===== Custom app shell (not VS Code chrome) ===== */
+    .nav-rail {
+      background: rgba(3, 3, 6, 0.96);
+      border-right: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1rem 0.55rem;
+      gap: 0.55rem;
+      z-index: 10;
+    }
+    .nav-rail .mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      margin-bottom: 0.6rem;
+      box-shadow: 0 0 24px rgba(139, 92, 246, 0.35);
+      object-fit: cover;
+    }
+    .nav-rail button {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      border: 1px solid transparent;
+      background: rgba(255,255,255,0.02);
+      color: var(--muted);
+      font-size: 0.62rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.2rem;
+      padding: 0.35rem;
+      cursor: pointer;
+    }
+    .nav-rail button .glyph {
+      font-size: 1.05rem;
+      line-height: 1;
+      color: var(--violet-soft);
+    }
+    .nav-rail button:hover,
+    .nav-rail button.active {
+      border-color: rgba(139, 92, 246, 0.45);
+      background: rgba(139, 92, 246, 0.12);
+      color: var(--text);
+      box-shadow: 0 0 18px rgba(139, 92, 246, 0.18);
+    }
+    .main-col {
+      display: grid;
       grid-template-rows: 1fr auto;
+      min-width: 0;
+      min-height: 0;
     }
 
     /* ===== Stage ===== */
@@ -373,6 +430,16 @@
   </style>
 </head>
 <body>
+  <nav class="nav-rail" aria-label="Grok Code navigation">
+    <img class="mark" id="navLogo" alt="" />
+    <button class="active" data-cmd="openHome" title="Home"><span class="glyph">◈</span>Home</button>
+    <button data-cmd="openExplorer" title="Files"><span class="glyph">▤</span>Files</button>
+    <button data-cmd="openBridge" title="Command"><span class="glyph">⬡</span>Command</button>
+    <button data-cmd="openTerminal" title="Terminal"><span class="glyph">▣</span>Term</button>
+    <button data-cmd="commandPalette" title="Palette"><span class="glyph">⌘</span>Palette</button>
+  </nav>
+
+  <div class="main-col">
   <section class="stage">
     <video class="bg" id="bg" autoplay muted loop playsinline></video>
     <div class="veil"></div>
@@ -380,7 +447,7 @@
     <div class="particles" id="particles"></div>
 
     <div class="hero">
-      <div class="badge"><span class="dot"></span> Grok Code · AI-native shell</div>
+      <div class="badge"><span class="dot"></span> Grok Code · custom shell</div>
       <img class="logo" id="logo" alt="Grok Code" />
       <h1><span class="grad" id="titleTyped"></span><span class="caret" id="titleCaret"></span></h1>
       <p class="tagline">
@@ -417,16 +484,16 @@
   <section class="dock">
     <div class="card">
       <h3>Identity</h3>
-      <p>Stock chrome stripped. Product surface is Grok Code — icons, letterpress, theme, title.</p>
+      <p>Upstream chrome stripped. This is Grok Code — void theme, violet accent, custom icons.</p>
       <img class="art" id="artPanel" alt="" />
     </div>
     <div class="card">
       <h3>Motion</h3>
-      <p>AI-generated loops, particles, typing sequences, and a living home stage.</p>
+      <p>AI-generated loops, particles, typing sequences, and a living command center.</p>
     </div>
     <div class="card">
       <h3>Editor</h3>
-      <p>Void dark theme, top activity bar, violet accent, ligatures, smooth caret.</p>
+      <p>Void black surfaces, pill tabs, hidden breadcrumbs, Grok file icons, smooth caret.</p>
     </div>
     <div class="card">
       <h3>Control</h3>
@@ -457,6 +524,7 @@
       </div>
     </div>
   </section>
+  </div>
 
   <script>
     const vscode = acquireVsCodeApi();
@@ -753,6 +821,16 @@
 
     document.querySelectorAll('button[data-cmd]').forEach((b) => {
       b.addEventListener('click', () => {
+        document.querySelectorAll('.nav-rail button').forEach((n) => n.classList.remove('active'));
+        if (b.closest('.nav-rail')) b.classList.add('active');
+        const cmd = b.dataset.cmd;
+        if (cmd === 'openHome') return;
+        vscode.postMessage({ type: 'command', command: cmd });
+      });
+    });
+
+    document.querySelectorAll('.actions button[data-cmd]').forEach((b) => {
+      b.addEventListener('click', () => {
         vscode.postMessage({ type: 'command', command: b.dataset.cmd });
       });
     });
@@ -768,7 +846,11 @@
       const msg = e.data || {};
       if (msg.type === 'init') {
         window.__clips = msg.clips || [];
-        if (msg.logo) logo.src = msg.logo;
+        if (msg.logo) {
+          logo.src = msg.logo;
+          const navLogo = document.getElementById('navLogo');
+          if (navLogo) navLogo.src = msg.logo;
+        }
         if (msg.panelArt) {
           const art = document.getElementById('artPanel');
           if (art) art.src = msg.panelArt;
@@ -782,15 +864,14 @@
         const chkMcp = document.getElementById('chkMcp');
         const chkWorkspace = document.getElementById('chkWorkspace');
 
-        if (msg.bridgeUrl && msg.bridgeToken) {
+        if (msg.bridgeUrl && msg.bridgeReady) {
           const info = document.getElementById('bridgeInfo');
           const urlEl = document.getElementById('bridgeUrl');
           const btn = document.getElementById('copyTokenBtn');
           if (info && urlEl && btn) {
             urlEl.textContent = msg.bridgeUrl;
             info.style.display = 'flex';
-            
-            // Hover styling
+
             btn.onmouseover = () => {
               btn.style.background = 'rgba(139, 92, 246, 0.3)';
               btn.style.borderColor = 'rgba(139, 92, 246, 0.6)';
@@ -799,18 +880,11 @@
               btn.style.background = 'rgba(139, 92, 246, 0.1)';
               btn.style.borderColor = 'rgba(139, 92, 246, 0.3)';
             };
-            
-            // Click to copy
+
             btn.onclick = () => {
-              navigator.clipboard.writeText(msg.bridgeToken);
-              btn.textContent = 'Copied!';
-              btn.style.background = 'rgba(34, 197, 94, 0.2)';
-              btn.style.borderColor = '#22c55e';
-              setTimeout(() => {
-                btn.textContent = 'Copy Token';
-                btn.style.background = 'rgba(139, 92, 246, 0.1)';
-                btn.style.borderColor = 'rgba(139, 92, 246, 0.3)';
-              }, 2000);
+              vscode.postMessage({ type: 'command', command: 'copyBridgeToken' });
+              btn.textContent = 'Requested';
+              setTimeout(() => { btn.textContent = 'Copy Token'; }, 2000);
             };
           }
 

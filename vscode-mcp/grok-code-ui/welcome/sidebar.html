@@ -3,178 +3,214 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Grok Bridge</title>
+  <title>Grok Command</title>
   <style>
     :root {
-      --grok-violet: #8b5cf6;
-      --grok-cyan: #67e8f9;
-      --bg: #050508;
-      --border: #16161c;
-      --text: #e2e8f0;
-      --text-muted: #94a3b8;
-      --ok: #34d399;
+      --void: #050508;
+      --surface: #0c0c10;
+      --line: #16161c;
+      --violet: #8b5cf6;
+      --violet-soft: #a78bfa;
+      --cyan: #67e8f9;
+      --text: #e8e8ed;
+      --muted: #8b8b9a;
+      --ok: #4ade80;
       --warn: #fbbf24;
+      --mono: "JetBrains Mono", "Cascadia Code", ui-monospace, monospace;
     }
+    * { box-sizing: border-box; }
     body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       margin: 0;
-      padding: 0;
+      background: var(--void);
+      color: var(--text);
+      font-family: "Inter", "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+      height: 100vh;
       display: flex;
       flex-direction: column;
-      height: 100vh;
       overflow: hidden;
       font-size: 13px;
     }
     .header {
-      padding: 0.8rem 1rem;
-      border-bottom: 1px solid var(--border);
+      padding: 0.9rem 1rem;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(12,12,16,0.95), rgba(5,5,8,0.9));
+    }
+    .header-top {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background: rgba(5, 5, 8, 0.8);
-      backdrop-filter: blur(8px);
+      gap: 0.6rem;
+      margin-bottom: 0.35rem;
     }
     .header h2 {
       margin: 0;
-      font-size: 0.95rem;
-      font-weight: 600;
-      letter-spacing: 0.05em;
-      background: linear-gradient(135deg, #fff 30%, var(--grok-violet) 100%);
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      background: linear-gradient(120deg, #fff, var(--violet-soft), var(--cyan));
       -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      color: transparent;
       display: flex;
       align-items: center;
-      gap: 0.4rem;
+      gap: 0.45rem;
     }
     .header h2::before {
       content: '';
-      display: inline-block;
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background: var(--grok-cyan);
-      box-shadow: 0 0 8px var(--grok-cyan);
+      background: var(--cyan);
+      box-shadow: 0 0 10px var(--cyan);
+      animation: pulse 1.6s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.45; transform: scale(0.9); }
+      50% { opacity: 1; transform: scale(1.15); }
     }
     .status {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      background: rgba(148, 163, 184, 0.1);
-      padding: 0.2rem 0.5rem;
+      font-size: 0.68rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: rgba(255,255,255,0.03);
+      padding: 0.25rem 0.55rem;
       border-radius: 999px;
-      border: 1px solid rgba(148, 163, 184, 0.2);
+      border: 1px solid var(--line);
     }
     .status.ok {
       color: var(--ok);
-      background: rgba(52, 211, 153, 0.1);
-      border-color: rgba(52, 211, 153, 0.25);
+      border-color: rgba(74, 222, 128, 0.25);
+      background: rgba(74, 222, 128, 0.08);
     }
     .status.warn {
       color: var(--warn);
-      background: rgba(251, 191, 36, 0.1);
       border-color: rgba(251, 191, 36, 0.25);
+      background: rgba(251, 191, 36, 0.08);
+    }
+    .header p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.78rem;
+      line-height: 1.45;
     }
     .body {
       flex: 1;
       overflow-y: auto;
-      padding: 1rem;
+      padding: 0.85rem;
       display: flex;
       flex-direction: column;
-      gap: 0.85rem;
+      gap: 0.7rem;
     }
     .card {
-      background: rgba(255, 255, 255, 0.02);
-      border: 1px solid var(--border);
-      border-radius: 10px;
+      background: rgba(12, 12, 16, 0.72);
+      border: 1px solid var(--line);
+      border-radius: 12px;
       padding: 0.85rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .card::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--violet-soft), var(--cyan), transparent);
+      opacity: 0.55;
     }
     .card h3 {
-      margin: 0 0 0.45rem;
-      font-size: 0.78rem;
-      letter-spacing: 0.08em;
+      margin: 0 0 0.4rem;
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
-      color: var(--grok-violet);
+      color: var(--violet-soft);
     }
     .card p, .card li {
       margin: 0;
-      color: var(--text-muted);
-      font-size: 0.82rem;
+      color: var(--muted);
+      font-size: 0.8rem;
       line-height: 1.45;
     }
     .meta {
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-      font-size: 0.78rem;
-      color: var(--text);
+      font-family: var(--mono);
+      font-size: 0.76rem;
+      color: var(--cyan);
       word-break: break-all;
+      padding: 0.45rem 0.55rem;
+      background: rgba(5,5,8,0.65);
+      border: 1px solid rgba(103, 232, 249, 0.15);
+      border-radius: 8px;
+      margin-top: 0.35rem;
     }
     ul {
       margin: 0.35rem 0 0;
-      padding-left: 1.1rem;
+      padding-left: 1rem;
+    }
+    code {
+      color: var(--cyan);
+      font-family: var(--mono);
+      font-size: 0.78rem;
     }
     .actions {
       display: flex;
       flex-direction: column;
       gap: 0.45rem;
-      padding: 0.8rem 1rem 1rem;
-      border-top: 1px solid var(--border);
+      padding: 0.8rem;
+      border-top: 1px solid var(--line);
+      background: rgba(5,5,8,0.92);
     }
     button {
       width: 100%;
       border: none;
-      border-radius: 8px;
-      padding: 0.65rem 0.8rem;
+      border-radius: 10px;
+      padding: 0.68rem 0.8rem;
       font-weight: 600;
       cursor: pointer;
-      font-size: 0.85rem;
-      transition: all 0.15s ease;
+      font-size: 0.82rem;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
     }
+    button:hover { transform: translateY(-1px); }
     button.primary {
       background: linear-gradient(135deg, #8b5cf6, #6d28d9);
       color: #fff;
-    }
-    button.primary:hover {
-      box-shadow: 0 0 12px rgba(139, 92, 246, 0.35);
+      box-shadow: 0 10px 24px rgba(109, 40, 217, 0.28);
     }
     button.secondary {
-      background: rgba(255, 255, 255, 0.04);
+      background: rgba(255,255,255,0.03);
       color: var(--text);
-      border: 1px solid var(--border);
+      border: 1px solid var(--line);
     }
     button.secondary:hover {
-      border-color: rgba(139, 92, 246, 0.4);
+      border-color: rgba(139, 92, 246, 0.45);
     }
     .note {
-      font-size: 0.75rem;
-      color: var(--text-muted);
+      font-size: 0.72rem;
+      color: var(--muted);
       line-height: 1.4;
+      min-height: 1rem;
     }
   </style>
 </head>
 <body>
   <div class="header">
-    <h2>Grok Bridge</h2>
-    <div class="status" id="hudStatus">Checking…</div>
+    <div class="header-top">
+      <h2>Grok Command</h2>
+      <div class="status" id="hudStatus">Checking…</div>
+    </div>
+    <p>Control plane for the custom Grok Code shell — not an in-editor chat.</p>
   </div>
 
   <div class="body">
     <div class="card">
-      <h3>Live control plane</h3>
-      <p>
-        AI drives Grok Code through the <strong style="color:var(--text)">MCP bridge</strong>
-        (not an in-editor chat yet). Talk to Grok in the TUI / agent and use
-        <code style="color:var(--grok-cyan)">vscode_*</code> tools.
-      </p>
+      <h3>Live bridge</h3>
+      <p>Talk to Grok in the TUI and use <code>vscode_*</code> MCP tools against this window.</p>
+      <div class="meta" id="bridgeUrl">—</div>
+      <p id="bridgeDetail" style="margin-top:0.45rem">Waiting for status…</p>
     </div>
 
     <div class="card">
-      <h3>Bridge</h3>
-      <p class="meta" id="bridgeUrl">—</p>
-      <p id="bridgeDetail" style="margin-top:0.4rem">Waiting for status…</p>
-    </div>
-
-    <div class="card">
-      <h3>Agent tools (highlights)</h3>
+      <h3>Agent tools</h3>
       <ul>
         <li><code>vscode_ping</code> / <code>vscode_status</code></li>
         <li><code>vscode_search_text</code> · content search</li>
@@ -185,11 +221,11 @@
     </div>
 
     <div class="card">
-      <h3>Quick tips</h3>
+      <h3>Shell notes</h3>
       <ul>
-        <li>Copy the bridge token, then ensure Grok MCP points at <code>mcp-server/dist/index.js</code>.</li>
-        <li>Env file: workspace <code>.vscode-mcp.env</code> or <code>~/.grok-code-app/.vscode-mcp.env</code>.</li>
-        <li>In-editor chat UI is planned — control path is MCP today.</li>
+        <li>Void theme, custom icons, hidden upstream chrome.</li>
+        <li>Token: workspace <code>.vscode-mcp.env</code> or <code>~/.grok-code-app/.vscode-mcp.env</code>.</li>
+        <li>Home Stage is your launch surface — not the stock welcome tab.</li>
       </ul>
     </div>
   </div>
@@ -221,17 +257,17 @@
     function applyStatus(info) {
       if (!info) return;
       if (info.running) {
-        statusEl.textContent = 'Connected';
+        statusEl.textContent = 'Online';
         statusEl.className = 'status ok';
         urlEl.textContent = info.url || 'http://127.0.0.1:7331';
         detailEl.textContent = info.hasToken
-          ? 'Token ready — use Copy Bridge Token for MCP clients.'
+          ? 'Token ready — copy for MCP clients.'
           : 'Bridge up (no token reported).';
       } else {
-        statusEl.textContent = 'Stopped';
+        statusEl.textContent = 'Offline';
         statusEl.className = 'status warn';
         urlEl.textContent = '—';
-        detailEl.textContent = 'Bridge not running. Command palette: Grok Code: Start Bridge.';
+        detailEl.textContent = 'Start the bridge from the command palette.';
       }
     }
 
@@ -248,23 +284,17 @@
 
     window.addEventListener('message', (e) => {
       const msg = e.data || {};
-      if (msg.type === 'bridgeStatus') {
-        applyStatus(msg);
-      }
-      if (msg.type === 'toast') {
-        setToast(msg.message || '');
-      }
+      if (msg.type === 'bridgeStatus') applyStatus(msg);
+      if (msg.type === 'toast') setToast(msg.message || '');
     });
 
-    // Request status on load
     if (vscode) {
       vscode.postMessage({ type: 'requestStatus' });
     } else {
       statusEl.textContent = 'Idle';
-      detailEl.textContent = 'Open this view inside Grok Code.';
+      detailEl.textContent = 'Open inside Grok Code.';
     }
 
-    // Refresh periodically
     setInterval(() => {
       if (vscode) vscode.postMessage({ type: 'requestStatus' });
     }, 4000);

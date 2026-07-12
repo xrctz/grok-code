@@ -1,36 +1,32 @@
 # Grok Code UI
 
-Full product shell for **Grok Code** (v0.3.1):
+Full custom product shell for **Grok Code** (v0.4.0):
 
-- Dark / Void themes + top activity bar layout
-- **Home Stage** — AI video scenes, particle field, typing title/tagline, terminal boot demo
-- Copilot / Agent chat stripped (extension disabled + chrome CSS)
-- Status brand + walkthrough
+- **Grok Code Void** default theme + custom file icons
+- **Home Stage** with left nav rail, AI video, particles, typing demo
+- **Grok Command** sidebar — bridge status and MCP tooling
+- Upstream VS Code chrome hidden via layout + `grok-code.css`
 
 ## Themes
 
 | Theme | Look |
 |-------|------|
+| **Grok Code Void** | Pure black void (default) |
 | **Grok Code Dark** | Near-black surfaces, violet accent (`#8B5CF6`) |
-| **Grok Code Void** | Pure black void variant |
+
+## Icons
+
+**Grok Code Icons** — violet/cyan minimal file & folder glyphs (replaces Seti).
 
 ## Commands
 
-- **Grok Code: Open Home Stage** — cinematic home with typing + motion
-- **Grok Code: Apply Full Layout** — theme + chrome defaults
+- **Grok Code: Open Home Stage** — cinematic home with nav rail + motion
+- **Grok Code: Apply Full Layout** — void theme + custom chrome defaults
 - **Grok Code: About**
-
-## Media
-
-`media/welcome/` — logo, panel art, `nebula.mp4`, `core-orbit.mp4`, `splash-editor.mp4`, `caret-pulse.mp4`
 
 ## Install
 
-From the repo root:
-
 ```bash
 npm run package:ui
-code --install-extension vscode-mcp/grok-code-ui/grok-code-ui-0.3.1.vsix
+code --install-extension vscode-mcp/grok-code-ui/grok-code-ui-0.4.0.vsix
 ```
-
-Or use `npm run launch`, which installs the latest `grok-code-ui-*.vsix` automatically.

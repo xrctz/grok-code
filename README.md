@@ -19,7 +19,7 @@ This workspace is a playground that:
 ├── vscode-src/               ← Code - OSS (~1.129) + product.json rebrand
 └── vscode-mcp/               ← bridge · MCP server · UI pack
     ├── extension/            ← HTTP bridge :7331 (v0.1.4)
-    ├── grok-code-ui/         ← themes + Home Stage + Bridge panel (v0.3.1)
+    ├── grok-code-ui/         ← themes + Home Stage + Command panel (v0.4.0)
     ├── mcp-server/           ← MCP tools for Grok (v0.1.2)
     └── scripts/mock-bridge.mjs
 ```
@@ -29,7 +29,7 @@ This workspace is a playground that:
 ### Grok Code product shell
 Custom identity, not stock VS Code:
 
-- **Grok Code Dark / Void** themes + top activity bar layout
+- **Grok Code Void** default theme + custom file icons
 - **Home Stage** webview with AI-generated art + looping video
 - Patched product name, icons, letterpress, workbench CSS
 - Launcher: `./scripts/launch-grok-code.sh`

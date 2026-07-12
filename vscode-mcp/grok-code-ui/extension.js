@@ -2,33 +2,35 @@ const vscode = require("vscode");
 const path = require("path");
 const fs = require("fs");
 
-/** Grok Code layout — AI-first, strip stock feel (safe settings only) */
+/** Grok Code layout — custom shell, not stock VS Code */
 const GROK_LAYOUT = {
-  "workbench.colorTheme": "Grok Code Dark",
+  "workbench.colorTheme": "Grok Code Void",
+  "workbench.iconTheme": "grok-code-icons",
   "window.title": "Grok Code${separator}${activeEditorShort}${separator}${rootNameShort}",
   "window.titleBarStyle": "custom",
-  "window.commandCenter": true,
+  "window.commandCenter": false,
   "window.autoDetectColorScheme": false,
   "window.density.editorTabHeight": "compact",
-  "window.menuBarVisibility": "compact",
+  "window.menuBarVisibility": "hidden",
 
   "workbench.activityBar.location": "top",
   "workbench.sideBar.location": "left",
   "workbench.panel.defaultLocation": "bottom",
   "workbench.statusBar.visible": true,
   "workbench.editor.showTabs": "multiple",
+  "workbench.editor.tabSizing": "shrink",
   "workbench.editor.tabActionLocation": "right",
   "workbench.editor.highlightModifiedTabs": true,
   "workbench.tree.indent": 14,
   "workbench.tree.renderIndentGuides": "always",
   "workbench.startupEditor": "none",
   "workbench.tips.enabled": false,
-  "workbench.layoutControl.enabled": true,
-  "workbench.navigationControl.enabled": true,
+  "workbench.layoutControl.enabled": false,
+  "workbench.navigationControl.enabled": false,
   "workbench.reduceMotion": "off",
-  "workbench.iconTheme": "vs-seti",
   "workbench.welcomePage.walkthroughs.openOnInstall": false,
   "workbench.secondarySideBar.defaultVisibility": "hidden",
+  "workbench.editor.empty.hint": "hidden",
 
   "chat.commandCenter.enabled": false,
   "chat.agent.enabled": false,
@@ -59,10 +61,12 @@ const GROK_LAYOUT = {
   "editor.overviewRulerBorder": false,
 
   "terminal.integrated.fontSize": 13,
+  "terminal.integrated.fontFamily":
+    "'JetBrains Mono', 'Cascadia Code', 'Fira Code', ui-monospace, monospace",
   "terminal.integrated.cursorBlinking": true,
   "terminal.integrated.smoothScrolling": true,
 
-  "breadcrumbs.enabled": true,
+  "breadcrumbs.enabled": false,
   "explorer.compactFolders": true,
   "explorer.decorations.badges": true,
   "explorer.decorations.colors": true,
@@ -172,6 +176,7 @@ function activate(context) {
     setTimeout(() => {
       applyLayout()
         .then(() => closeCopilotChrome())
+        .then(() => focusGrokShell())
         .catch(() => {});
     }, 600);
   }
@@ -200,6 +205,15 @@ async function closeCopilotChrome() {
     } catch {
       /* ignore */
     }
+  }
+}
+
+/** Focus the Grok activity bar container. */
+async function focusGrokShell() {
+  try {
+    await vscode.commands.executeCommand("workbench.view.extension.grokCode");
+  } catch {
+    /* ignore */
   }
 }
 
@@ -255,9 +269,20 @@ function openHomePanel(context) {
         await vscode.commands.executeCommand("workbench.action.showCommands");
         break;
       case "openExplorer":
-        await vscode.commands.executeCommand(
-          "workbench.view.explorer"
-        );
+        await vscode.commands.executeCommand("workbench.view.explorer");
+        break;
+      case "openBridge":
+        await vscode.commands.executeCommand("workbench.view.extension.grok-code.sidebar-chat");
+        break;
+      case "openTerminal":
+        await vscode.commands.executeCommand("workbench.action.terminal.toggleTerminal");
+        break;
+      case "copyBridgeToken":
+        try {
+          await vscode.commands.executeCommand("vscodeMcpBridge.copyToken");
+        } catch {
+          vscode.window.showWarningMessage("Bridge extension not running.");
+        }
         break;
       case "runDiagnostics": {
         const diags = vscode.languages.getDiagnostics();

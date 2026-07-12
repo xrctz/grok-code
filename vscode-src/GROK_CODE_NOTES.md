@@ -8,7 +8,7 @@ This is no longer a light rename of Code - OSS. The playground ships a **Grok Co
 |-------|------|
 | `product.json` (source + extracted binary) | App name **Grok Code**, `grok-code` ids, stripped marketing URLs |
 | Binary chrome | Injected `grok-code.css` into workbench.html, custom letterpress SVGs, replaced `code.png` / pixmaps |
-| `vscode-mcp/grok-code-ui/` | Full UI pack v0.3.1 — themes, Home Stage, **Bridge status panel**, walkthrough |
+| `vscode-mcp/grok-code-ui/` | Full UI pack v0.4.0 — void theme, custom icons, Home Stage, **Grok Command** panel |
 | `vscode-mcp/extension/` | MCP bridge (Grok drives the live editor) |
 | `scripts/launch-grok-code.sh` | Launcher → `~/.grok-code-app` profile; auto-resolves binary |
 | `scripts/ensure-vscode-binary.sh` | Downloads VS Code tarball → `~/.local/share/grok-code/app`, brands it |

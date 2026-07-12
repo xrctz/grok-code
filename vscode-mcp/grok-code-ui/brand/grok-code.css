@@ -1,50 +1,168 @@
-/* Grok Code — workbench chrome overrides (safe, non-destructive) */
+/* Grok Code — custom workbench shell (not stock VS Code) */
 
 :root {
   --grok-violet: #8b5cf6;
+  --grok-violet-deep: #6d28d9;
   --grok-cyan: #67e8f9;
   --grok-void: #050508;
+  --grok-surface: #0c0c10;
+  --grok-line: #16161c;
+  --grok-muted: #6b6b76;
 }
 
+/* ── Global workbench feel ─────────────────────────────────────────────── */
 .monaco-workbench {
-  --vscode-activityBar-background: #050508 !important;
+  --vscode-activityBar-background: var(--grok-void) !important;
+  font-family: "Inter", "SF Pro Text", "Segoe UI", system-ui, sans-serif !important;
 }
 
 .monaco-workbench .part.titlebar {
-  background: #050508 !important;
-}
-
-.monaco-workbench .activitybar {
-  border-color: #16161c !important;
+  background: var(--grok-void) !important;
+  border-bottom: 1px solid var(--grok-line) !important;
 }
 
 .monaco-workbench .part.statusbar {
-  background: #050508 !important;
-  border-top: 1px solid #16161c !important;
+  background: var(--grok-void) !important;
+  border-top: 1px solid var(--grok-line) !important;
+  font-size: 11px !important;
+  letter-spacing: 0.03em;
 }
 
-.monaco-workbench .command-center-center {
-  border-radius: 999px !important;
+.monaco-workbench .activitybar,
+.monaco-workbench .activity-bar {
+  border-color: var(--grok-line) !important;
+}
+
+.monaco-workbench .part.sidebar,
+.monaco-workbench .part.panel,
+.monaco-workbench .part.auxiliarybar {
+  border-color: var(--grok-line) !important;
 }
 
 .monaco-workbench .composite.title {
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 11px !important;
+  font-weight: 600 !important;
 }
 
-/* Empty editor = void nebula feel */
-.monaco-workbench .part.editor.empty {
-  background: radial-gradient(ellipse at 50% 30%, #1a1030 0%, #050508 55%) !important;
+/* ── Hide stock VS Code chrome ─────────────────────────────────────────── */
+.monaco-workbench .command-center-center,
+.monaco-workbench .command-center,
+.monaco-workbench .monaco-breadcrumbs,
+.monaco-workbench .editor-group-container .breadcrumbs-control,
+.monaco-workbench .editor-actions .action-label.codicon-go-to-file,
+.monaco-workbench .editor-actions .action-label.codicon-layout,
+.monaco-workbench .editor-actions .action-label.codicon-split-horizontal,
+.monaco-workbench .layout-controls-container,
+.monaco-workbench .editor-group-container > .title .monaco-action-bar .action-item[aria-label*="Layout" i],
+.monaco-workbench .editor-group-container > .title .monaco-action-bar .action-item[aria-label*="Navigation" i],
+.monaco-workbench .gettingStartedContainer,
+.monaco-workbench .walkThroughContent,
+.monaco-workbench .welcomePage,
+.monaco-workbench .part.titlebar .window-appicon,
+.monaco-workbench .part.titlebar .menubar,
+.monaco-workbench .part.titlebar .action-label.codicon-feedback,
+.monaco-workbench .part.titlebar .action-label.codicon-live-share,
+.monaco-workbench .part.titlebar .action-label.codicon-remote,
+.monaco-workbench .part.titlebar .action-label.codicon-accounts-view-bar-icon {
+  display: none !important;
+}
+
+/* Hide stock top activity bar entries — keep Explorer + Grok Code */
+.monaco-workbench .activitybar .action-item[aria-label="Search" i],
+.monaco-workbench .activitybar .action-item[aria-label="Source Control" i],
+.monaco-workbench .activitybar .action-item[aria-label="Run and Debug" i],
+.monaco-workbench .activitybar .action-item[aria-label="Run" i],
+.monaco-workbench .activitybar .action-item[aria-label="Extensions" i],
+.monaco-workbench .activitybar .action-item[aria-label="Testing" i],
+.monaco-workbench .activitybar .action-item[aria-label="Remote Explorer" i],
+.monaco-workbench .activitybar .action-item[aria-label="Accounts" i],
+.monaco-workbench .activitybar .action-item[aria-label="Manage" i],
+.monaco-workbench .activitybar .action-item[aria-label="Profiles" i],
+.monaco-workbench .activitybar .action-item[aria-label*="Settings" i],
+.monaco-workbench .activitybar .action-item[aria-label*="Copilot" i],
+.monaco-workbench .activitybar .action-item[aria-label*="Chat" i],
+.monaco-workbench .activitybar .global-actions,
+.monaco-workbench .activitybar .monaco-action-bar .action-item:has(.codicon-settings-gear),
+.monaco-workbench .activitybar .monaco-action-bar .action-item:has(.codicon-account) {
+  display: none !important;
+}
+
+/* ── Tabs: pill / Grok style ───────────────────────────────────────────── */
+.monaco-workbench .tabs-container > .tab {
+  border-radius: 10px 10px 0 0 !important;
+  margin: 0 2px !important;
+  border: 1px solid transparent !important;
+  background: transparent !important;
 }
 
 .monaco-workbench .tabs-container > .tab.active {
-  box-shadow: inset 0 2px 0 0 var(--grok-violet);
+  background: var(--grok-surface) !important;
+  border-color: var(--grok-line) !important;
+  border-bottom-color: var(--grok-surface) !important;
+  box-shadow: inset 0 2px 0 0 var(--grok-violet) !important;
 }
 
+.monaco-workbench .tabs-container > .tab:not(.active):hover {
+  background: rgba(139, 92, 246, 0.06) !important;
+}
+
+.monaco-workbench .editor-group-container > .title .tabs-container {
+  padding-top: 4px !important;
+}
+
+/* ── Empty editor = Grok void nebula ───────────────────────────────────── */
+.monaco-workbench .part.editor.empty,
+.monaco-workbench .editor-group-container.empty {
+  background:
+    radial-gradient(ellipse at 50% 28%, rgba(109, 40, 217, 0.28) 0%, transparent 52%),
+    radial-gradient(ellipse at 78% 82%, rgba(103, 232, 249, 0.08) 0%, transparent 42%),
+    var(--grok-void) !important;
+}
+
+/* ── Sidebar + lists ───────────────────────────────────────────────────── */
+.monaco-workbench .monaco-list-row:hover {
+  background: rgba(139, 92, 246, 0.08) !important;
+}
+
+.monaco-workbench .monaco-list-row.selected,
+.monaco-workbench .monaco-list-row.focused {
+  outline: 1px solid rgba(139, 92, 246, 0.35) !important;
+}
+
+.monaco-workbench .part.sidebar .title-label h2 {
+  background: linear-gradient(90deg, #fff, var(--grok-violet));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent !important;
+}
+
+/* ── Scrollbars ────────────────────────────────────────────────────────── */
 .monaco-scrollable-element > .scrollbar > .slider {
   border-radius: 8px !important;
+  background: rgba(139, 92, 246, 0.22) !important;
 }
 
-/* === Purge Copilot / Agent chat chrome (targeted, not whole layout) === */
+.monaco-scrollable-element > .scrollbar > .slider:hover {
+  background: rgba(139, 92, 246, 0.38) !important;
+}
+
+/* ── Status bar cleanup ─────────────────────────────────────────────────── */
+.monaco-workbench .part.statusbar .statusbar-item[id*="feedback" i],
+.monaco-workbench .part.statusbar .statusbar-item[id*="telemetry" i],
+.monaco-workbench .part.statusbar .statusbar-item[id*="sync" i],
+.monaco-workbench .part.statusbar .statusbar-item[id*="settingsSync" i],
+.monaco-workbench .part.statusbar .statusbar-item[id*="auth" i],
+.monaco-workbench .part.statusbar .statusbar-item[id*="account" i],
+.monaco-workbench .part.statusbar .statusbar-item[id*="remote" i],
+.monaco-workbench .part.statusbar .statusbar-item[id*="liveShare" i],
+.monaco-workbench .part.statusbar .statusbar-item[aria-label*="Copilot" i],
+.monaco-workbench .part.statusbar .statusbar-item[aria-label*="Sign in" i] {
+  display: none !important;
+}
+
+/* ── Copilot / Agent purge ─────────────────────────────────────────────── */
 .monaco-workbench .part.auxiliarybar .composite.chat,
 .monaco-workbench .part.auxiliarybar .pane-body.chat-view,
 .monaco-workbench .interactive-session,
@@ -62,44 +180,62 @@
   display: none !important;
 }
 
-/* Dim stock account marketing */
-.monaco-workbench .codicon-vscode-account {
-  opacity: 0.55;
-}
-
-/* Hide feedback buttons in status bar */
-.monaco-workbench .part.statusbar .statusbar-item[id*="feedback" i],
-.monaco-workbench .part.statusbar .statusbar-item[id*="telemetry" i] {
-  display: none !important;
-}
-
-/* Hide Accounts entry and icon in activitybar, titlebar, and anywhere else */
+/* ── Accounts / settings purge ─────────────────────────────────────────── */
 .monaco-workbench [id*="accounts" i],
 .monaco-workbench [aria-label*="Accounts" i],
 .monaco-workbench [title*="Accounts" i],
 .monaco-workbench .codicon-account,
-.monaco-workbench .accounts-activity-action {
-  display: none !important;
-}
-
-/* Hide Settings entry and icon in activitybar, titlebar, and anywhere else */
+.monaco-workbench .accounts-activity-action,
 .monaco-workbench [id*="preferences" i],
 .monaco-workbench [aria-label*="Settings" i],
 .monaco-workbench [title*="Settings" i],
 .monaco-workbench .codicon-settings-gear,
-.monaco-workbench .codicon-settings {
+.monaco-workbench .codicon-settings,
+.monaco-workbench .codicon-vscode-account {
   display: none !important;
 }
 
-/* Hide default getting started / walkthrough container from upstream */
+/* ── Walkthrough / upstream welcome ────────────────────────────────────── */
 .monaco-workbench .gettingStartedContainer .index-list {
   display: none !important;
 }
 
-/* Hide Settings Sync and Authentication status bar elements */
-.monaco-workbench .part.statusbar .statusbar-item[id*="sync" i],
-.monaco-workbench .part.statusbar .statusbar-item[id*="settingsSync" i],
-.monaco-workbench .part.statusbar .statusbar-item[id*="auth" i],
-.monaco-workbench .part.statusbar .statusbar-item[id*="account" i] {
-  display: none !important;
+/* ── Panel tabs ────────────────────────────────────────────────────────── */
+.monaco-workbench .part.panel .monaco-action-bar .action-item .action-label {
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 11px !important;
+}
+
+.monaco-workbench .part.panel .monaco-action-bar .action-item.checked .action-label {
+  border-bottom: 2px solid var(--grok-violet) !important;
+}
+
+/* ── Quick input / command palette accent ──────────────────────────────── */
+.monaco-workbench .quick-input-widget {
+  border: 1px solid rgba(139, 92, 246, 0.35) !important;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(103, 232, 249, 0.08) !important;
+}
+
+.monaco-workbench .quick-input-list .monaco-list-row.focused {
+  background: rgba(109, 40, 217, 0.28) !important;
+}
+
+/* ── Notifications ─────────────────────────────────────────────────────── */
+.monaco-workbench .notifications-toasts .notification-toast {
+  border-left: 3px solid var(--grok-violet) !important;
+  border-radius: 10px !important;
+}
+
+/* ── Watermark / letterpress ───────────────────────────────────────────── */
+.monaco-workbench .editor-group-watermark {
+  opacity: 0.92;
+}
+
+.monaco-workbench .editor-group-watermark .watermark-box {
+  max-width: 520px;
+}
+
+.monaco-workbench .editor-group-watermark .watermark-box .letterpress {
+  filter: drop-shadow(0 0 28px rgba(139, 92, 246, 0.25));
 }
