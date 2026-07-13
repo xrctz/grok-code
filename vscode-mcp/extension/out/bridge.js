@@ -59,6 +59,7 @@ const COMMAND_DENYLIST = new Set([
     'workbench.action.toggleDevTools'
 ]);
 const MAX_BODY_BYTES = 8 * 1024 * 1024; // 8MB
+const DEFAULT_BROWSER_FRAME_MAX_AGE_MS = 2500;
 class BridgeServer {
     server;
     options;
@@ -465,8 +466,11 @@ class BridgeServer {
      */
     async getBrowserScreenshot(query, body) {
         const force = body?.force === true || query?.get('force') === '1';
-        const maxAge = Number(query?.get('maxAgeMs') || body?.url ? 2500 : 2500);
-        const fresh = this.latestFrame && !force && Date.now() - this.latestFrame.ts <= maxAge;
+        const maxAge = normalizeBrowserFrameMaxAge(query?.get('maxAgeMs') ?? body?.maxAgeMs);
+        const fresh = this.latestFrame &&
+            !force &&
+            maxAge > 0 &&
+            Date.now() - this.latestFrame.ts <= maxAge;
         if (fresh && this.latestFrame && fs.existsSync(this.latestFrame.path)) {
             const b64 = fs.readFileSync(this.latestFrame.path).toString('base64');
             return {
@@ -476,6 +480,7 @@ class BridgeServer {
                 mime: this.latestFrame.mime,
                 bytes: this.latestFrame.bytes,
                 ageMs: Date.now() - this.latestFrame.ts,
+                maxAgeMs: maxAge,
                 meta: this.latestFrame.meta,
                 imageBase64: b64,
                 browser: this.getBrowser()
@@ -503,6 +508,7 @@ class BridgeServer {
             mime: 'image/png',
             bytes: shot.bytes,
             ageMs: 0,
+            maxAgeMs: maxAge,
             meta: this.latestFrame.meta,
             imageBase64: b64,
             browser: this.getBrowser()
@@ -1151,6 +1157,17 @@ class BridgeServer {
     }
 }
 exports.BridgeServer = BridgeServer;
+function normalizeBrowserFrameMaxAge(value) {
+    if (value === undefined ||
+        value === null ||
+        (typeof value === 'string' && value.trim() === '')) {
+        return DEFAULT_BROWSER_FRAME_MAX_AGE_MS;
+    }
+    const parsed = Number(value);
+    return Number.isFinite(parsed) && parsed >= 0
+        ? parsed
+        : DEFAULT_BROWSER_FRAME_MAX_AGE_MS;
+}
 function guessBrowserUrl(browser) {
     const label = browser?.active?.label || '';
     if (/^\d+\.\d+\.\d+\.\d+:\d+/.test(label) || /^localhost:\d+/i.test(label)) {

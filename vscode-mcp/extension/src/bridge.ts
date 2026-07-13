@@ -42,6 +42,7 @@ const COMMAND_DENYLIST = new Set([
 ]);
 
 const MAX_BODY_BYTES = 8 * 1024 * 1024; // 8MB
+const DEFAULT_BROWSER_FRAME_MAX_AGE_MS = 2500;
 
 export class BridgeServer {
   private server: http.Server | undefined;
@@ -248,7 +249,10 @@ export class BridgeServer {
           return this.send(
             res,
             200,
-            await this.getBrowserScreenshot(undefined, json as { url?: string; force?: boolean })
+            await this.getBrowserScreenshot(
+              undefined,
+              json as { url?: string; force?: boolean; maxAgeMs?: number }
+            )
           );
         case 'POST /notifications/clear':
           return this.send(res, 200, await this.clearNotifications());
@@ -497,12 +501,17 @@ export class BridgeServer {
    */
   private async getBrowserScreenshot(
     query?: URLSearchParams,
-    body?: { url?: string; force?: boolean }
+    body?: { url?: string; force?: boolean; maxAgeMs?: number }
   ): Promise<Json> {
     const force = body?.force === true || query?.get('force') === '1';
-    const maxAge = Number(query?.get('maxAgeMs') || body?.url ? 2500 : 2500);
+    const maxAge = normalizeBrowserFrameMaxAge(
+      query?.get('maxAgeMs') ?? body?.maxAgeMs
+    );
     const fresh =
-      this.latestFrame && !force && Date.now() - this.latestFrame.ts <= maxAge;
+      this.latestFrame &&
+      !force &&
+      maxAge > 0 &&
+      Date.now() - this.latestFrame.ts <= maxAge;
 
     if (fresh && this.latestFrame && fs.existsSync(this.latestFrame.path)) {
       const b64 = fs.readFileSync(this.latestFrame.path).toString('base64');
@@ -513,6 +522,7 @@ export class BridgeServer {
         mime: this.latestFrame.mime,
         bytes: this.latestFrame.bytes,
         ageMs: Date.now() - this.latestFrame.ts,
+        maxAgeMs: maxAge,
         meta: this.latestFrame.meta,
         imageBase64: b64,
         browser: this.getBrowser()
@@ -543,6 +553,7 @@ export class BridgeServer {
       mime: 'image/png',
       bytes: shot.bytes,
       ageMs: 0,
+      maxAgeMs: maxAge,
       meta: this.latestFrame.meta,
       imageBase64: b64,
       browser: this.getBrowser()
@@ -1297,6 +1308,20 @@ interface FramePayload {
   title?: string;
   url?: string;
   source?: string;
+}
+
+function normalizeBrowserFrameMaxAge(value: unknown): number {
+  if (
+    value === undefined ||
+    value === null ||
+    (typeof value === 'string' && value.trim() === '')
+  ) {
+    return DEFAULT_BROWSER_FRAME_MAX_AGE_MS;
+  }
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0
+    ? parsed
+    : DEFAULT_BROWSER_FRAME_MAX_AGE_MS;
 }
 
 function guessBrowserUrl(browser: { active?: { label?: string } | null }): string | null {

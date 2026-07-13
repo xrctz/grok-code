@@ -289,13 +289,19 @@ server.tool('vscode_browser_screenshot', 'Capture what is on the Grok Code Brows
         .boolean()
         .optional()
         .describe('If true, skip cached frame and re-capture (headless fallback if no live stream).'),
+    maxAgeMs: z
+        .number()
+        .int()
+        .nonnegative()
+        .optional()
+        .describe('Maximum cached frame age in milliseconds. Defaults to 2500; use 0 to require a fresh capture.'),
     url: z
         .string()
         .optional()
         .describe('Optional URL for headless fallback screenshot.')
-}, async ({ force, url }) => {
+}, async ({ force, maxAgeMs, url }) => {
     try {
-        return textResult(await bridge.post('/browser/screenshot', { force: !!force, url }));
+        return textResult(await bridge.post('/browser/screenshot', { force: !!force, maxAgeMs, url }));
     }
     catch (err) {
         return errorResult(err);
