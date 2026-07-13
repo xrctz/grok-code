@@ -27,6 +27,16 @@ function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+async function withFixedClock(callback) {
+  const originalNow = Date.now;
+  Date.now = () => 1_700_000_000_000;
+  try {
+    return await callback();
+  } finally {
+    Date.now = originalNow;
+  }
+}
+
 async function freePort() {
   return new Promise((resolve, reject) => {
     const socket = createServer();
@@ -40,6 +50,14 @@ async function freePort() {
 
 async function run() {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "grok-screenshot-test-"));
+  try {
+    await runInTempDir(tempDir);
+  } finally {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
+}
+
+async function runInTempDir(tempDir) {
   const fakeChrome = path.join(tempDir, "fake-chrome");
   fs.writeFileSync(
     fakeChrome,
@@ -89,7 +107,6 @@ fs.writeFileSync(arg.slice("--screenshot=".length), Buffer.alloc(96, 7));
   const bridge = new BridgeServer({ host: "127.0.0.1", port, token });
   const baseUrl = `http://127.0.0.1:${port}`;
   const previousChromePath = process.env.CHROME_PATH;
-  process.env.CHROME_PATH = fakeChrome;
 
   async function request(route, method = "GET", body) {
     const response = await fetch(`${baseUrl}${route}`, {
@@ -115,6 +132,7 @@ fs.writeFileSync(arg.slice("--screenshot=".length), Buffer.alloc(96, 7));
   }
 
   try {
+    process.env.CHROME_PATH = fakeChrome;
     await bridge.start();
 
     await postFrame("long-lived-frame");
@@ -129,22 +147,24 @@ fs.writeFileSync(arg.slice("--screenshot=".length), Buffer.alloc(96, 7));
       "POST maxAgeMs can retain a frame older than the default window"
     );
 
-    await postFrame("post-zero-frame");
-    await delay(20);
-    const postZero = await request("/browser/screenshot", "POST", {
-      maxAgeMs: 0,
-      url: "http://example.test/",
+    const postZero = await withFixedClock(async () => {
+      await postFrame("post-zero-frame");
+      return request("/browser/screenshot", "POST", {
+        maxAgeMs: 0,
+        url: "http://example.test/",
+      });
     });
     assert(
       postZero.source === "chrome-headless" && postZero.maxAgeMs === 0,
       "POST maxAgeMs=0 requires a fresh capture"
     );
 
-    await postFrame("query-zero-frame");
-    await delay(20);
-    const queryZero = await request(
-      "/browser/screenshot?maxAgeMs=0&url=http%3A%2F%2Fexample.test%2F"
-    );
+    const queryZero = await withFixedClock(async () => {
+      await postFrame("query-zero-frame");
+      return request(
+        "/browser/screenshot?maxAgeMs=0&url=http%3A%2F%2Fexample.test%2F"
+      );
+    });
     assert(
       queryZero.source === "chrome-headless" && queryZero.maxAgeMs === 0,
       "GET maxAgeMs=0 requires a fresh capture"
@@ -176,7 +196,6 @@ fs.writeFileSync(arg.slice("--screenshot=".length), Buffer.alloc(96, 7));
     } else {
       process.env.CHROME_PATH = previousChromePath;
     }
-    fs.rmSync(tempDir, { recursive: true, force: true });
   }
 }
 

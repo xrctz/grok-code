@@ -508,7 +508,10 @@ export class BridgeServer {
       query?.get('maxAgeMs') ?? body?.maxAgeMs
     );
     const fresh =
-      this.latestFrame && !force && Date.now() - this.latestFrame.ts <= maxAge;
+      this.latestFrame &&
+      !force &&
+      maxAge > 0 &&
+      Date.now() - this.latestFrame.ts <= maxAge;
 
     if (fresh && this.latestFrame && fs.existsSync(this.latestFrame.path)) {
       const b64 = fs.readFileSync(this.latestFrame.path).toString('base64');

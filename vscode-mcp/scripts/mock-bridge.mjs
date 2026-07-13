@@ -12,6 +12,7 @@ const HOST = process.env.VSCODE_MCP_HOST || '127.0.0.1';
 const PORT = Number(process.env.VSCODE_MCP_PORT || '7331');
 const TOKEN = process.env.VSCODE_MCP_TOKEN || 'dev-token-123';
 const MAX_BODY = 8 * 1024 * 1024;
+const DEFAULT_BROWSER_FRAME_MAX_AGE_MS = 2500;
 
 const state = {
   files: new Map([
@@ -53,6 +54,20 @@ function auth(req) {
   const bearer = header.startsWith('Bearer ') ? header.slice(7).trim() : '';
   const x = (req.headers['x-mcp-token'] || '').trim();
   return bearer === TOKEN || x === TOKEN;
+}
+
+function normalizeBrowserFrameMaxAge(value) {
+  if (
+    value === undefined ||
+    value === null ||
+    (typeof value === 'string' && value.trim() === '')
+  ) {
+    return DEFAULT_BROWSER_FRAME_MAX_AGE_MS;
+  }
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0
+    ? parsed
+    : DEFAULT_BROWSER_FRAME_MAX_AGE_MS;
 }
 
 function readBody(req) {
@@ -188,9 +203,9 @@ const server = http.createServer(async (req, res) => {
           : url.searchParams.get('maxAgeMs')
         : undefined;
     const maxAgeMs =
-      rawMaxAgeMs === undefined || rawMaxAgeMs === null
-        ? undefined
-        : Number(rawMaxAgeMs);
+      path === '/browser/screenshot'
+        ? normalizeBrowserFrameMaxAge(rawMaxAgeMs)
+        : undefined;
     return json(res, 200, {
       ok: true,
       source: 'mock',
@@ -198,7 +213,7 @@ const server = http.createServer(async (req, res) => {
       mime: 'image/png',
       bytes: 0,
       ageMs: 0,
-      ...(Number.isFinite(maxAgeMs) ? { maxAgeMs } : {}),
+      ...(maxAgeMs === undefined ? {} : { maxAgeMs }),
       meta: {},
       imageBase64: '',
       note: 'mock has no real browser frame'

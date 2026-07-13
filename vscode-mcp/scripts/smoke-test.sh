@@ -51,6 +51,15 @@ if (!screenshotText.includes('"maxAgeMs": 0')) {
   throw new Error("screenshot maxAgeMs was not forwarded: " + screenshotText);
 }
 console.log("✓ vscode_browser_screenshot maxAgeMs");
+const defaultScreenshot = await client.callTool({
+  name: "vscode_browser_screenshot",
+  arguments: {}
+});
+const defaultScreenshotText = defaultScreenshot.content?.[0]?.text || "";
+if (!defaultScreenshotText.includes('"maxAgeMs": 2500')) {
+  throw new Error("screenshot default maxAgeMs mismatch: " + defaultScreenshotText);
+}
+console.log("✓ vscode_browser_screenshot default maxAgeMs");
 await client.close();
 console.log("All smoke checks passed.");
 EOF
