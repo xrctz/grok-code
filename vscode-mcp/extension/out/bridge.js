@@ -467,7 +467,10 @@ class BridgeServer {
     async getBrowserScreenshot(query, body) {
         const force = body?.force === true || query?.get('force') === '1';
         const maxAge = normalizeBrowserFrameMaxAge(query?.get('maxAgeMs') ?? body?.maxAgeMs);
-        const fresh = this.latestFrame && !force && Date.now() - this.latestFrame.ts <= maxAge;
+        const fresh = this.latestFrame &&
+            !force &&
+            maxAge > 0 &&
+            Date.now() - this.latestFrame.ts <= maxAge;
         if (fresh && this.latestFrame && fs.existsSync(this.latestFrame.path)) {
             const b64 = fs.readFileSync(this.latestFrame.path).toString('base64');
             return {
