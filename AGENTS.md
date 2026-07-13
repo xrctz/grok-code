@@ -41,6 +41,12 @@ TypeScript compiler — `npm run build` (or `npm run typecheck --prefix vscode-m
   `~/.grok/bin/grok`, which is not installed here. Set `GROK_CODE_OPEN_AGENT=0` when
   launching to skip the auto-opened agent terminal and avoid noise. You do NOT need the
   Grok/Claude CLIs to exercise the core MCP path.
+- **Multi-agent support** lives in the pure, `vscode`-free module
+  `vscode-mcp/grok-code-ui/agents.js` (registry + PATH/env binary detection), tested by
+  `npm run test:agents`. Only Grok Build auto-opens; Codex/Gemini/OpenCode/Aider are
+  detected on PATH and launched on demand (palette `Grok Code: Open AI Agent…`, the Home
+  "Agents" nav button, or the sidebar "AI Agents" list). None are installed in this VM, so
+  they show as "Install"; override a path with `CODEX_BIN`/`GEMINI_BIN`/`OPENCODE_BIN`/`AIDER_BIN`.
 - **Bridge auth token:** the bridge reads `vscodeMcpBridge.token` from the editor's user
   settings (`~/.grok-code-app/User/settings.json`); if empty it generates a random
   per-workspace token. To drive the live editor from an MCP client, set a known token
