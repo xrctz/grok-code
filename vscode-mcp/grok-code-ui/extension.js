@@ -2,6 +2,7 @@ const vscode = require("vscode");
 const path = require("path");
 const fs = require("fs");
 const os = require("os");
+const { AGENTS, findAgentBinary, listAgents, getAgent } = require("./agents");
 
 /** Integrated terminal name for the embedded Grok Build TUI */
 const GROK_BUILD_TERMINAL_NAME = "Grok Build";
@@ -174,6 +175,19 @@ function activate(context) {
     })
   );
 
+  // Generic AI-agent picker + per-agent launch commands (Codex, Gemini, OpenCode, Aider, …)
+  context.subscriptions.push(
+    vscode.commands.registerCommand("grokCode.openAgent", () => openAgentPicker())
+  );
+  for (const agent of AGENTS) {
+    if (!agent.command || agent.builtin) continue;
+    context.subscriptions.push(
+      vscode.commands.registerCommand(agent.command, () =>
+        openAgentTerminal(agent.id)
+      )
+    );
+  }
+
   context.subscriptions.push(
     vscode.commands.registerCommand("grokCode.showAbout", () => {
       vscode.window
@@ -339,6 +353,9 @@ function openHomePanel(context) {
       case "openClaude":
       case "openClaudeTerminal":
         await vscode.commands.executeCommand("grokCode.openClaudeTerminal");
+        break;
+      case "openAgentPicker":
+        await vscode.commands.executeCommand("grokCode.openAgent");
         break;
       case "copyBridgeToken":
         try {
@@ -614,6 +631,15 @@ class GrokSidebarProvider {
         case "openClaudeTerminal":
           await vscode.commands.executeCommand("grokCode.openClaudeTerminal");
           break;
+        case "openAgent":
+          if (msg.id) {
+            await openAgentTerminal(msg.id);
+            setTimeout(() => this.pushStatus().catch(() => {}), 400);
+          }
+          break;
+        case "openAgentPicker":
+          await vscode.commands.executeCommand("grokCode.openAgent");
+          break;
         default:
           break;
       }
@@ -649,6 +675,14 @@ class GrokSidebarProvider {
       }
     }
     this.view.webview.postMessage({ type: "bridgeStatus", ...info });
+    try {
+      this.view.webview.postMessage({
+        type: "agents",
+        agents: listAgents(process.env),
+      });
+    } catch {
+      /* ignore */
+    }
   }
 }
 
@@ -1138,6 +1172,157 @@ async function openClaudeTerminal() {
   }
 }
 
+/**
+ * Env for a generic third-party agent terminal: inherits the process env, adds
+ * common per-user bin dirs to PATH, and injects the Grok Code MCP bridge vars so
+ * MCP-aware agents can drive this editor.
+ * @returns {Record<string, string>}
+ */
+function buildAgentTerminalEnv() {
+  /** @type {Record<string, string>} */
+  const env = {};
+  for (const [k, v] of Object.entries(process.env)) {
+    if (typeof v === "string") env[k] = v;
+  }
+
+  const home = os.homedir();
+  const pathParts = [
+    path.join(home, ".local", "bin"),
+    path.join(home, ".npm-global", "bin"),
+    path.join(home, ".cargo", "bin"),
+    path.join(home, ".bun", "bin"),
+    path.join(home, ".deno", "bin"),
+    env.PATH || "",
+  ].filter(Boolean);
+  env.PATH = pathParts.join(path.delimiter);
+
+  env.TERM = env.TERM || "xterm-256color";
+  env.COLORTERM = env.COLORTERM || "truecolor";
+
+  const bridge = getActiveBridgeConfig();
+  if (bridge) {
+    if (bridge.VSCODE_MCP_HOST) env.VSCODE_MCP_HOST = bridge.VSCODE_MCP_HOST;
+    if (bridge.VSCODE_MCP_PORT) env.VSCODE_MCP_PORT = bridge.VSCODE_MCP_PORT;
+    if (bridge.VSCODE_MCP_TOKEN) env.VSCODE_MCP_TOKEN = bridge.VSCODE_MCP_TOKEN;
+    if (bridge.VSCODE_MCP_URL) env.VSCODE_MCP_URL = bridge.VSCODE_MCP_URL;
+  } else {
+    env.VSCODE_MCP_HOST = env.VSCODE_MCP_HOST || "127.0.0.1";
+    env.VSCODE_MCP_PORT = env.VSCODE_MCP_PORT || "7331";
+  }
+
+  if (process.env.GROK_CODE_ROOT) {
+    env.GROK_CODE_ROOT = process.env.GROK_CODE_ROOT;
+  }
+
+  return env;
+}
+
+/**
+ * Open (or focus) an integrated terminal running a third-party agent CLI.
+ * Grok Build and Claude Code keep their dedicated launchers; this handles the
+ * rest (Codex, Gemini, OpenCode, Aider, …). If the binary is missing it shows a
+ * friendly install hint instead of spawning a broken terminal.
+ * @param {string} agentId
+ * @returns {Promise<boolean>}
+ */
+async function openAgentTerminal(agentId) {
+  const agent = getAgent(agentId);
+  if (!agent) {
+    vscode.window.showWarningMessage(`Unknown agent: ${agentId}`);
+    return false;
+  }
+
+  // Built-ins have richer dedicated launchers.
+  if (agent.id === "grok") return openGrokBuildTerminal();
+  if (agent.id === "claude") return openClaudeTerminal();
+
+  const name = agent.label;
+  const existing = vscode.window.terminals.find((t) => t.name === name);
+  if (existing) {
+    existing.show(true);
+    return true;
+  }
+
+  const env = buildAgentTerminalEnv();
+  const bin = findAgentBinary(agent, env);
+  if (!bin) {
+    const hint = agent.install ? ` Install with: ${agent.install}` : "";
+    vscode.window
+      .showInformationMessage(
+        `${agent.label} is not installed or not on PATH.${hint}`,
+        agent.install ? "Copy Install Command" : "OK"
+      )
+      .then((choice) => {
+        if (choice === "Copy Install Command" && agent.install) {
+          void vscode.env.clipboard.writeText(agent.install);
+          vscode.window.setStatusBarMessage(
+            `$(clippy) Copied ${agent.label} install command`,
+            4000
+          );
+        }
+      });
+    return false;
+  }
+
+  const folders = vscode.workspace.workspaceFolders;
+  const cwd =
+    (folders && folders.length && folders[0].uri.fsPath) ||
+    process.env.GROK_CODE_CWD ||
+    undefined;
+  const args = Array.isArray(agent.args) ? agent.args.slice() : [];
+
+  try {
+    const terminal = vscode.window.createTerminal({
+      name,
+      shellPath: bin,
+      shellArgs: args,
+      cwd,
+      env,
+      message: `${agent.label} · Grok Code terminal (MCP bridge env injected — point it at grok-code MCP to drive this window)`,
+      isTransient: false,
+    });
+    terminal.show(true);
+    vscode.window.setStatusBarMessage(`$(rocket) ${agent.label} terminal`, 5000);
+    return true;
+  } catch (err) {
+    // Fallback: default shell + sendText (handles odd shellPath launch failures)
+    try {
+      const terminal = vscode.window.createTerminal({ name, cwd, env });
+      terminal.show(true);
+      const q = (s) => `'${String(s).replace(/'/g, `'\\''`)}'`;
+      terminal.sendText([q(bin), ...args.map(q)].join(" "), true);
+      return true;
+    } catch (err2) {
+      const msg = err2 instanceof Error ? err2.message : String(err2 || err);
+      vscode.window.showWarningMessage(`Could not start ${agent.label}: ${msg}`);
+      return false;
+    }
+  }
+}
+
+/**
+ * Quick-pick over every registered agent, showing install status, then launch
+ * the chosen one.
+ * @returns {Promise<void>}
+ */
+async function openAgentPicker() {
+  const agents = listAgents(process.env);
+  const items = agents.map((a) => ({
+    label: `${a.available ? "$(check)" : "$(cloud-download)"} ${a.label}`,
+    description: a.available ? "installed" : "not installed",
+    detail: a.available ? a.desc : `${a.desc}  —  ${a.install || "not on PATH"}`,
+    agentId: a.id,
+  }));
+  const pick = await vscode.window.showQuickPick(items, {
+    title: "Open AI Agent in Grok Code",
+    placeHolder: "Choose an AI coding agent to open in the terminal",
+    matchOnDescription: true,
+    matchOnDetail: true,
+  });
+  if (!pick) return;
+  await openAgentTerminal(pick.agentId);
+}
+
 function deactivate() {}
 
 module.exports = {
@@ -1145,6 +1330,8 @@ module.exports = {
   deactivate,
   openGrokBuildTerminal,
   openClaudeTerminal,
+  openAgentTerminal,
+  openAgentPicker,
   resolveGrokBinary,
   resolveClaudeLaunchScript,
 };

@@ -198,6 +198,63 @@
       line-height: 1.4;
       min-height: 1rem;
     }
+    .agent-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .agent-row {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      width: 100%;
+      padding: 0.55rem 0.6rem;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.02);
+      color: var(--text);
+      cursor: pointer;
+      text-align: left;
+      font-weight: 600;
+      font-size: 0.82rem;
+      transition: transform 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+    }
+    .agent-row:hover {
+      transform: translateY(-1px);
+      border-color: rgba(139, 92, 246, 0.5);
+      background: rgba(139, 92, 246, 0.08);
+    }
+    .agent-row .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex: 0 0 auto;
+      background: var(--muted);
+      box-shadow: none;
+    }
+    .agent-row.installed .dot {
+      background: var(--ok);
+      box-shadow: 0 0 8px var(--ok);
+    }
+    .agent-row .name { flex: 1; }
+    .agent-row .tag {
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 0.1rem 0.4rem;
+    }
+    .agent-row.installed .tag {
+      color: var(--ok);
+      border-color: rgba(74, 222, 128, 0.3);
+    }
+    .agent-row.default .tag {
+      color: var(--violet-soft);
+      border-color: rgba(167, 139, 250, 0.4);
+    }
   </style>
 </head>
 <body>
@@ -215,6 +272,14 @@
       <p>Embedded Grok Build and optional Claude Code both use <code>vscode_*</code> MCP tools against this window.</p>
       <div class="meta" id="bridgeUrl">—</div>
       <p id="bridgeDetail" style="margin-top:0.45rem">Waiting for status…</p>
+    </div>
+
+    <div class="card">
+      <h3>AI Agents</h3>
+      <p style="margin-bottom:0.5rem">Grok Build is default. Other installed agents appear here automatically — click to open one in the terminal.</p>
+      <div id="agentList" class="agent-list">
+        <p class="note" style="min-height:0">Detecting agents…</p>
+      </div>
     </div>
 
     <div class="card">
@@ -301,10 +366,40 @@
       if (vscode) vscode.postMessage({ type: 'openHome' });
     };
 
+    function renderAgents(agents) {
+      const host = document.getElementById('agentList');
+      if (!host) return;
+      if (!Array.isArray(agents) || !agents.length) {
+        host.innerHTML = '<p class="note" style="min-height:0">No agents detected.</p>';
+        return;
+      }
+      host.innerHTML = '';
+      for (const a of agents) {
+        const row = document.createElement('button');
+        row.className = 'agent-row' + (a.available ? ' installed' : '') + (a.id === 'grok' ? ' default' : '');
+        const tag = a.id === 'grok' ? 'Default' : (a.available ? 'Ready' : 'Install');
+        row.title = a.available
+          ? (a.desc || a.label)
+          : (a.install ? ('Not installed — ' + a.install) : (a.desc || a.label));
+        row.innerHTML =
+          '<span class="dot"></span><span class="name"></span><span class="tag"></span>';
+        row.querySelector('.name').textContent = a.label;
+        row.querySelector('.tag').textContent = tag;
+        row.onclick = () => {
+          if (vscode) vscode.postMessage({ type: 'openAgent', id: a.id });
+          setToast(a.available
+            ? ('Opening ' + a.label + '…')
+            : (a.label + ' not installed — see notification for install command.'));
+        };
+        host.appendChild(row);
+      }
+    }
+
     window.addEventListener('message', (e) => {
       const msg = e.data || {};
       if (msg.type === 'bridgeStatus') applyStatus(msg);
       if (msg.type === 'toast') setToast(msg.message || '');
+      if (msg.type === 'agents') renderAgents(msg.agents);
     });
 
     if (vscode) {

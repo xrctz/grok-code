@@ -1,8 +1,8 @@
 {
   "name": "grok-code-ui",
   "displayName": "Grok Code",
-  "description": "Grok Code shell v0.6.0 — custom UI, Grok Build + optional Claude Code terminals, Home Stage (with mascot), Bridge panel.",
-  "version": "0.6.0",
+  "description": "Grok Code shell v0.7.0 — custom UI, multi-agent terminals (Grok Build, Claude, Codex, Gemini, OpenCode, Aider), Home Stage (with mascot), Bridge panel.",
+  "version": "0.7.0",
   "publisher": "grok-labs",
   "engines": {
     "vscode": "^1.90.0"
@@ -85,6 +85,31 @@
       {
         "command": "grokCode.openClaudeTerminal",
         "title": "Grok Code: Open Claude Code Terminal",
+        "category": "Grok Code"
+      },
+      {
+        "command": "grokCode.openAgent",
+        "title": "Grok Code: Open AI Agent…",
+        "category": "Grok Code"
+      },
+      {
+        "command": "grokCode.openCodexTerminal",
+        "title": "Grok Code: Open Codex (ChatGPT) Terminal",
+        "category": "Grok Code"
+      },
+      {
+        "command": "grokCode.openGeminiTerminal",
+        "title": "Grok Code: Open Gemini CLI Terminal",
+        "category": "Grok Code"
+      },
+      {
+        "command": "grokCode.openOpenCodeTerminal",
+        "title": "Grok Code: Open OpenCode Terminal",
+        "category": "Grok Code"
+      },
+      {
+        "command": "grokCode.openAiderTerminal",
+        "title": "Grok Code: Open Aider Terminal",
         "category": "Grok Code"
       },
       {

@@ -119,6 +119,27 @@ A second agent terminal is available via button only — it never auto-boots.
 - Home nav → **Claude** button
 - Requires `ANTHROPIC_API_KEY` in your environment (see `launch-claude.sh`)
 
+### Other agents (Codex, Gemini, OpenCode, Aider)
+
+Grok Code is Grok-first but plays nice with other popular CLI coding agents.
+Any that are installed on your machine are **detected automatically** and can be
+opened in an integrated terminal — the Grok Code MCP bridge env is injected so
+MCP-aware agents can drive the editor too.
+
+- Home nav → **Agents** button, or Command sidebar → **AI Agents** list
+- Command palette → `Grok Code: Open AI Agent…` (or a per-agent command)
+- The bottom-bar list shows install status; not-installed agents show a copyable install command
+
+| Agent | Binary | Install |
+| --- | --- | --- |
+| **Codex** (ChatGPT) | `codex` | `npm install -g @openai/codex` |
+| **Gemini CLI** | `gemini` | `npm install -g @google/gemini-cli` |
+| **OpenCode** | `opencode` | `npm install -g opencode-ai` |
+| **Aider** | `aider` | `pipx install aider-chat` |
+
+Override a binary path with the matching env var (`CODEX_BIN`, `GEMINI_BIN`,
+`OPENCODE_BIN`, `AIDER_BIN`) if it lives somewhere unusual.
+
 ### MCP configuration
 
 Print a ready-to-paste Grok MCP config:
@@ -138,7 +159,7 @@ See **[vscode-mcp/README.md](vscode-mcp/README.md)** for the full tool reference
 ├── scripts/                  # binary bootstrap, shell wrapper, smoke tests
 ├── vscode-mcp/               # bridge · MCP server · UI pack
 │   ├── extension/            # HTTP bridge :7331 (v0.1.5)
-│   ├── grok-code-ui/         # themes + Home Stage (+ mascot) + agent terminals (v0.6.0)
+│   ├── grok-code-ui/         # themes + Home Stage (+ mascot) + multi-agent terminals (v0.7.0)
 │   └── mcp-server/           # MCP tools for agents (v0.1.3)
 └── vscode-src/               # Code - OSS (~1.129) + product.json rebrand
 ```
