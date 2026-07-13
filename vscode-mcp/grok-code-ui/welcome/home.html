@@ -343,6 +343,41 @@
       box-shadow: 0 0 20px rgba(139,92,246,0.15);
     }
 
+    /* ===== Mascot ===== */
+    .mascot {
+      position: absolute;
+      right: clamp(0.5rem, 3vw, 3rem);
+      bottom: 0;
+      z-index: 2;
+      height: min(78%, 620px);
+      width: auto;
+      max-width: 42vw;
+      object-fit: contain;
+      object-position: bottom right;
+      pointer-events: none;
+      display: none;
+      filter: drop-shadow(0 0 28px rgba(139, 92, 246, 0.45))
+        drop-shadow(0 14px 40px rgba(0, 0, 0, 0.6));
+      -webkit-mask-image: linear-gradient(180deg, #000 82%, transparent 100%);
+      mask-image: linear-gradient(180deg, #000 82%, transparent 100%);
+      animation: mascotIn 1.1s cubic-bezier(0.16, 1, 0.3, 1) both 0.35s,
+        mascotFloat 6.5s ease-in-out infinite 1.5s;
+    }
+    @keyframes mascotIn {
+      from { opacity: 0; transform: translateX(40px) translateY(12px); }
+      to { opacity: 1; transform: translateX(0) translateY(0); }
+    }
+    @keyframes mascotFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-12px); }
+    }
+    @media (max-width: 900px) {
+      .mascot { opacity: 0.5; max-width: 55vw; }
+    }
+    @media (max-width: 620px) {
+      .mascot { display: none !important; }
+    }
+
     .switcher {
       position: absolute;
       right: 1rem;
@@ -447,6 +482,7 @@
     <div class="veil"></div>
     <div class="scanlines"></div>
     <div class="particles" id="particles"></div>
+    <img class="mascot" id="mascot" alt="Grok Code mascot" />
 
     <div class="hero">
       <div class="badge"><span class="dot"></span> Grok Code · custom shell</div>
@@ -856,6 +892,13 @@
         if (msg.panelArt) {
           const art = document.getElementById('artPanel');
           if (art) art.src = msg.panelArt;
+        }
+        if (msg.mascot) {
+          const mascot = document.getElementById('mascot');
+          if (mascot) {
+            mascot.src = msg.mascot;
+            mascot.style.display = 'block';
+          }
         }
         buildSwitcher(window.__clips.length || 0);
         setClip(0);

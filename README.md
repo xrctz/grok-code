@@ -137,9 +137,9 @@ See **[vscode-mcp/README.md](vscode-mcp/README.md)** for the full tool reference
 ├── launch-claude.sh          # Claude Code launcher (optional agent)
 ├── scripts/                  # binary bootstrap, shell wrapper, smoke tests
 ├── vscode-mcp/               # bridge · MCP server · UI pack
-│   ├── extension/            # HTTP bridge :7331 (v0.1.4)
-│   ├── grok-code-ui/         # themes + Home Stage + agent terminals (v0.5.1)
-│   └── mcp-server/           # MCP tools for agents (v0.1.2)
+│   ├── extension/            # HTTP bridge :7331 (v0.1.5)
+│   ├── grok-code-ui/         # themes + Home Stage (+ mascot) + agent terminals (v0.6.0)
+│   └── mcp-server/           # MCP tools for agents (v0.1.3)
 └── vscode-src/               # Code - OSS (~1.129) + product.json rebrand
 ```
 
@@ -152,6 +152,7 @@ See **[vscode-mcp/README.md](vscode-mcp/README.md)** for the full tool reference
 | `GROK_REAL_BIN` | `~/.grok/bin/grok` | Grok CLI binary path |
 | `CODE_BIN` | auto | Override VS Code binary |
 | `VSCODE_MCP_TOKEN` | from `.vscode-mcp.env` | Bridge auth token |
+| `VSCODE_MCP_TIMEOUT_MS` | `60000` | MCP client per-request timeout (aborts a hung bridge) |
 
 Copy `.vscode-mcp.env.example` → `.vscode-mcp.env` for local bridge settings.
 

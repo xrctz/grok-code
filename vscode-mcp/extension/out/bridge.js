@@ -129,7 +129,7 @@ class BridgeServer {
             return this.send(res, 200, {
                 ok: true,
                 service: 'grok-code',
-                version: '0.1.4',
+                version: '0.1.5',
                 product: 'Grok Code',
                 vscode: vscode.version,
                 workspace: vscode.workspace.name ?? null,
@@ -184,6 +184,16 @@ class BridgeServer {
                     return this.send(res, 200, this.getSelection());
                 case 'GET /document':
                     return this.send(res, 200, await this.getDocument(url.searchParams.get('path') || undefined));
+                case 'GET /document/lines':
+                    return this.send(res, 200, await this.getDocumentLines({
+                        path: url.searchParams.get('path') || undefined,
+                        startLine: Number(url.searchParams.get('startLine') || '1'),
+                        endLine: url.searchParams.get('endLine')
+                            ? Number(url.searchParams.get('endLine'))
+                            : undefined
+                    }));
+                case 'POST /document/lines':
+                    return this.send(res, 200, await this.getDocumentLines(json));
                 case 'GET /diagnostics':
                     return this.send(res, 200, this.getDiagnostics(url.searchParams.get('path') || undefined));
                 case 'GET /search-files':
@@ -265,6 +275,7 @@ class BridgeServer {
                             'GET /active-editor',
                             'GET /selection',
                             'GET /document?path=',
+                            'GET|POST /document/lines',
                             'GET /diagnostics?path=',
                             'GET /search-files?query=',
                             'GET|POST /search-text',
@@ -585,6 +596,33 @@ class BridgeServer {
             isDirty: doc.isDirty,
             eol: doc.eol === vscode.EndOfLine.CRLF ? 'crlf' : 'lf',
             text: doc.getText()
+        };
+    }
+    /**
+     * Read a 1-based, inclusive line range of a document.
+     * Cheaper than getDocument for large files — agents can page through a file
+     * without paying the token cost of the whole thing.
+     */
+    async getDocumentLines(payload) {
+        const doc = await resolveDocument(payload?.path);
+        if (!doc) {
+            return { open: false, error: 'No document' };
+        }
+        const total = doc.lineCount;
+        const start = Math.min(Math.max(Math.floor(payload?.startLine ?? 1), 1), Math.max(total, 1));
+        const requestedEnd = payload?.endLine ?? total;
+        const end = Math.min(Math.max(Math.floor(requestedEnd), start), total);
+        const range = new vscode.Range(new vscode.Position(start - 1, 0), new vscode.Position(end - 1, doc.lineAt(Math.max(end - 1, 0)).range.end.character));
+        return {
+            ok: true,
+            open: true,
+            path: doc.uri.fsPath,
+            languageId: doc.languageId,
+            lineCount: total,
+            startLine: start,
+            endLine: end,
+            eol: doc.eol === vscode.EndOfLine.CRLF ? 'crlf' : 'lf',
+            text: doc.getText(range)
         };
     }
     getDiagnostics(filePath) {

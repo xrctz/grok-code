@@ -1,8 +1,8 @@
 {
   "name": "grok-code-ui",
   "displayName": "Grok Code",
-  "description": "Grok Code shell v0.5.1 — custom UI, Grok Build + optional Claude Code terminals, Home Stage, Bridge panel.",
-  "version": "0.5.1",
+  "description": "Grok Code shell v0.6.0 — custom UI, Grok Build + optional Claude Code terminals, Home Stage (with mascot), Bridge panel.",
+  "version": "0.6.0",
   "publisher": "grok-labs",
   "engines": {
     "vscode": "^1.90.0"
