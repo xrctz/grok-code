@@ -457,6 +457,9 @@ function postInit(panel, context) {
     panelArt: fs.existsSync(path.join(media, "panel-art.jpg"))
       ? asWeb("panel-art.jpg")
       : asWeb("logo.png"),
+    mascot: fs.existsSync(path.join(media, "mascot.png"))
+      ? asWeb("mascot.png")
+      : null,
     clips,
     bridgeUrl: bridgeCfg ? bridgeCfg.VSCODE_MCP_URL : null,
     bridgeReady: !!(bridgeCfg && bridgeCfg.VSCODE_MCP_TOKEN),

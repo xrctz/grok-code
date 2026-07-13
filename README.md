@@ -138,7 +138,7 @@ See **[vscode-mcp/README.md](vscode-mcp/README.md)** for the full tool reference
 ├── scripts/                  # binary bootstrap, shell wrapper, smoke tests
 ├── vscode-mcp/               # bridge · MCP server · UI pack
 │   ├── extension/            # HTTP bridge :7331 (v0.1.5)
-│   ├── grok-code-ui/         # themes + Home Stage + agent terminals (v0.5.1)
+│   ├── grok-code-ui/         # themes + Home Stage (+ mascot) + agent terminals (v0.6.0)
 │   └── mcp-server/           # MCP tools for agents (v0.1.3)
 └── vscode-src/               # Code - OSS (~1.129) + product.json rebrand
 ```

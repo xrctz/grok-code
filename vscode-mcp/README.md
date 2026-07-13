@@ -130,7 +130,7 @@ Restart Grok (or reload MCP). Open Grok Code with the bridge running, then ask G
 | `vscode_terminal_*` | create / send-text / list / close / **output** |
 | `vscode_shell_exec` | Run shell with **stdout/stderr/exitCode** (agent loops) |
 
-Bridge extension **0.1.5** · MCP server **0.1.3** · UI pack **0.5.1** (embedded Grok Build + optional Claude Code terminal button).
+Bridge extension **0.1.5** · MCP server **0.1.3** · UI pack **0.6.0** (embedded Grok Build + optional Claude Code terminal button + Home Stage mascot).
 
 ## Auth
 
