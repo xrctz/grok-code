@@ -181,6 +181,16 @@ const server = http.createServer(async (req, res) => {
     (path === '/browser/screenshot' && (req.method === 'GET' || req.method === 'POST')) ||
     (path === '/browser/frame' && req.method === 'POST')
   ) {
+    const rawMaxAgeMs =
+      path === '/browser/screenshot'
+        ? req.method === 'POST'
+          ? body.maxAgeMs
+          : url.searchParams.get('maxAgeMs')
+        : undefined;
+    const maxAgeMs =
+      rawMaxAgeMs === undefined || rawMaxAgeMs === null
+        ? undefined
+        : Number(rawMaxAgeMs);
     return json(res, 200, {
       ok: true,
       source: 'mock',
@@ -188,6 +198,7 @@ const server = http.createServer(async (req, res) => {
       mime: 'image/png',
       bytes: 0,
       ageMs: 0,
+      ...(Number.isFinite(maxAgeMs) ? { maxAgeMs } : {}),
       meta: {},
       imageBase64: '',
       note: 'mock has no real browser frame'

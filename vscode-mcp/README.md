@@ -125,7 +125,7 @@ Restart Grok (or reload MCP). Open Grok Code with the bridge running, then ask G
 | `vscode_run_command` | Run a command id (denylist for quit/reload/etc.) |
 | `vscode_show_message` | Status bar / optional toast |
 | `vscode_reveal_line` | Scroll cursor into view |
-| `vscode_browser` / `vscode_browser_open` / `vscode_browser_screenshot` | Built-in browser |
+| `vscode_browser` / `vscode_browser_open` / `vscode_browser_screenshot` | Built-in browser; screenshots accept `maxAgeMs` (`2500` default, `0` forces fresh) |
 | `vscode_notifications_clear` | Clear toasts (unpause browser) |
 | `vscode_terminal_*` | create / send-text / list / close / **output** |
 | `vscode_shell_exec` | Run shell with **stdout/stderr/exitCode** (agent loops) |

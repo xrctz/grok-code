@@ -124,7 +124,8 @@ fs.writeFileSync(arg.slice("--screenshot=".length), Buffer.alloc(96, 7));
       url: "http://example.test/",
     });
     assert(
-      longLived.source === "long-lived-frame",
+      longLived.source === "long-lived-frame" &&
+        longLived.maxAgeMs === 10_000,
       "POST maxAgeMs can retain a frame older than the default window"
     );
 
@@ -135,7 +136,7 @@ fs.writeFileSync(arg.slice("--screenshot=".length), Buffer.alloc(96, 7));
       url: "http://example.test/",
     });
     assert(
-      postZero.source === "chrome-headless",
+      postZero.source === "chrome-headless" && postZero.maxAgeMs === 0,
       "POST maxAgeMs=0 requires a fresh capture"
     );
 
@@ -145,7 +146,7 @@ fs.writeFileSync(arg.slice("--screenshot=".length), Buffer.alloc(96, 7));
       "/browser/screenshot?maxAgeMs=0&url=http%3A%2F%2Fexample.test%2F"
     );
     assert(
-      queryZero.source === "chrome-headless",
+      queryZero.source === "chrome-headless" && queryZero.maxAgeMs === 0,
       "GET maxAgeMs=0 requires a fresh capture"
     );
 
@@ -153,8 +154,20 @@ fs.writeFileSync(arg.slice("--screenshot=".length), Buffer.alloc(96, 7));
     await delay(20);
     const defaultWindow = await request("/browser/screenshot", "POST", {});
     assert(
-      defaultWindow.source === "default-window-frame",
+      defaultWindow.source === "default-window-frame" &&
+        defaultWindow.maxAgeMs === 2500,
       "omitting maxAgeMs preserves the default cache window"
+    );
+
+    await postFrame("invalid-window-frame");
+    await delay(20);
+    const invalidWindow = await request(
+      "/browser/screenshot?maxAgeMs=not-a-number"
+    );
+    assert(
+      invalidWindow.source === "invalid-window-frame" &&
+        invalidWindow.maxAgeMs === 2500,
+      "invalid maxAgeMs safely uses the default cache window"
     );
   } finally {
     bridge.stop();

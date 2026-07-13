@@ -42,6 +42,15 @@ await client.callTool({
   arguments: { message: "smoke-test ok", type: "info" }
 });
 console.log("✓ vscode_show_message");
+const screenshot = await client.callTool({
+  name: "vscode_browser_screenshot",
+  arguments: { maxAgeMs: 0 }
+});
+const screenshotText = screenshot.content?.[0]?.text || "";
+if (!screenshotText.includes('"maxAgeMs": 0')) {
+  throw new Error("screenshot maxAgeMs was not forwarded: " + screenshotText);
+}
+console.log("✓ vscode_browser_screenshot maxAgeMs");
 await client.close();
 console.log("All smoke checks passed.");
 EOF
