@@ -91,7 +91,7 @@ const server = http.createServer(async (req, res) => {
     return json(res, 200, {
       ok: true,
       service: 'vscode-mcp-bridge',
-      version: '0.1.4-mock',
+      version: '0.1.5-mock',
       vscode: 'mock',
       workspace: 'mock-workspace',
       folderCount: 1,
@@ -216,6 +216,51 @@ const server = http.createServer(async (req, res) => {
       eol: 'lf',
       text: doc.text
     });
+  }
+
+  if (
+    (path === '/document/lines' && req.method === 'GET') ||
+    (path === '/document/lines' && req.method === 'POST')
+  ) {
+    const p =
+      (req.method === 'POST' ? body.path : url.searchParams.get('path')) || state.activePath;
+    const doc = state.files.get(p);
+    if (!doc) return json(res, 404, { error: 'not found' });
+    const lines = doc.text.split(/\r?\n/);
+    const total = lines.length;
+    const rawStart = Number(
+      (req.method === 'POST' ? body.startLine : url.searchParams.get('startLine')) || 1
+    );
+    const rawEnd =
+      req.method === 'POST' ? body.endLine : url.searchParams.get('endLine');
+    const start = Math.min(Math.max(Math.floor(rawStart) || 1, 1), Math.max(total, 1));
+    const end = Math.min(
+      Math.max(Math.floor(Number(rawEnd ?? total)) || total, start),
+      total
+    );
+    return json(res, 200, {
+      ok: true,
+      open: true,
+      path: p,
+      languageId: doc.languageId,
+      lineCount: total,
+      startLine: start,
+      endLine: end,
+      eol: 'lf',
+      text: lines.slice(start - 1, end).join('\n')
+    });
+  }
+
+  // Test aid: sleep for `ms` then respond (used to verify client request timeouts).
+  if (
+    (path === '/sleep' && req.method === 'GET') ||
+    (path === '/sleep' && req.method === 'POST')
+  ) {
+    const ms = Number(
+      (req.method === 'POST' ? body.ms : url.searchParams.get('ms')) || 0
+    );
+    await new Promise((r) => setTimeout(r, Math.min(Math.max(ms, 0), 10000)));
+    return json(res, 200, { ok: true, sleptMs: ms });
   }
 
   if (path === '/diagnostics' && req.method === 'GET') {

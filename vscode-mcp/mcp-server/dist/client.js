@@ -1,5 +1,9 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+/** Default request timeout when none is configured. */
+export const DEFAULT_TIMEOUT_MS = 60_000;
+const MIN_TIMEOUT_MS = 1_000;
+const MAX_TIMEOUT_MS = 600_000;
 /**
  * Resolve bridge connection settings from env, optional .vscode-mcp.env, or defaults.
  */
@@ -10,7 +14,14 @@ export function loadBridgeConfig(cwd = process.cwd()) {
     const port = Number(process.env.VSCODE_MCP_PORT || '7331');
     const token = process.env.VSCODE_MCP_TOKEN || '';
     const baseUrl = process.env.VSCODE_MCP_URL || `http://${host}:${port}`;
-    return { host, port, token, baseUrl };
+    const timeoutMs = clampTimeout(Number(process.env.VSCODE_MCP_TIMEOUT_MS));
+    return { host, port, token, baseUrl, timeoutMs };
+}
+function clampTimeout(value) {
+    if (!Number.isFinite(value) || value <= 0) {
+        return DEFAULT_TIMEOUT_MS;
+    }
+    return Math.min(Math.max(value, MIN_TIMEOUT_MS), MAX_TIMEOUT_MS);
 }
 function findEnvFile(start) {
     let dir = path.resolve(start);
@@ -72,8 +83,14 @@ export class BridgeClient {
     get settings() {
         return this.config;
     }
+    /** Effective per-request timeout (falls back to the default for legacy configs). */
+    get timeoutMs() {
+        const t = this.config.timeoutMs;
+        return typeof t === 'number' && t > 0 ? t : DEFAULT_TIMEOUT_MS;
+    }
     async health() {
-        return this.request('GET', '/health', undefined, false);
+        // Health is a lightweight liveness probe — cap it so discovery fails fast.
+        return this.request('GET', '/health', undefined, false, Math.min(this.timeoutMs, 5_000));
     }
     async get(pathname, query) {
         const qs = new URLSearchParams();
@@ -90,7 +107,7 @@ export class BridgeClient {
     async post(pathname, body) {
         return this.request('POST', pathname, body);
     }
-    async request(method, pathname, body, auth = true) {
+    async request(method, pathname, body, auth = true, timeoutMs = this.timeoutMs) {
         const url = `${this.config.baseUrl.replace(/\/$/, '')}${pathname}`;
         const headers = {
             Accept: 'application/json'
@@ -107,13 +124,23 @@ export class BridgeClient {
             payload = JSON.stringify(body);
             headers['Content-Type'] = 'application/json';
         }
+        // Abort hung requests so a stuck bridge never blocks the agent indefinitely.
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), timeoutMs);
         let res;
         try {
-            res = await fetch(url, { method, headers, body: payload });
+            res = await fetch(url, { method, headers, body: payload, signal: controller.signal });
         }
         catch (err) {
+            if (controller.signal.aborted) {
+                throw new Error(`Grok Code bridge request timed out after ${timeoutMs}ms: ${method} ${pathname}. ` +
+                    'Increase VSCODE_MCP_TIMEOUT_MS or check whether the editor is responsive.');
+            }
             const message = err instanceof Error ? err.message : String(err);
             throw new Error(`Cannot reach Grok Code bridge at ${url}: ${message}. Is Grok Code open with the bridge running?`);
+        }
+        finally {
+            clearTimeout(timer);
         }
         const text = await res.text();
         let data;

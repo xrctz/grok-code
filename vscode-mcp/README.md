@@ -51,7 +51,7 @@ npm run compile
 ```bash
 cd vscode-mcp/extension
 npx @vscode/vsce package --no-dependencies --allow-missing-repository
-code --install-extension vscode-mcp-bridge-0.1.4.vsix
+code --install-extension vscode-mcp-bridge-0.1.5.vsix
 ```
 
 ### 3. Build the MCP server
@@ -112,6 +112,7 @@ Restart Grok (or reload MCP). Open Grok Code with the bridge running, then ask G
 | `vscode_tabs` | All tabs including browser/webviews |
 | `vscode_get_selection` | Current selection text |
 | `vscode_get_document` | Full file contents |
+| `vscode_read_lines` | Read a 1-based line range (cheap paging of large files) |
 | `vscode_get_diagnostics` | Errors & warnings |
 | `vscode_search_files` | Workspace filename/glob search |
 | `vscode_search_text` | **Content** search (path/line/preview) |
@@ -129,7 +130,7 @@ Restart Grok (or reload MCP). Open Grok Code with the bridge running, then ask G
 | `vscode_terminal_*` | create / send-text / list / close / **output** |
 | `vscode_shell_exec` | Run shell with **stdout/stderr/exitCode** (agent loops) |
 
-Bridge extension **0.1.4** · MCP server **0.1.2** · UI pack **0.5.1** (embedded Grok Build + optional Claude Code terminal button).
+Bridge extension **0.1.5** · MCP server **0.1.3** · UI pack **0.5.1** (embedded Grok Build + optional Claude Code terminal button).
 
 ## Auth
 
@@ -138,6 +139,7 @@ Bridge extension **0.1.4** · MCP server **0.1.2** · UI pack **0.5.1** (embedde
 - On start, the extension writes `.vscode-mcp.env` in the workspace root **and** `~/.grok-code-app/.vscode-mcp.env` (works with no folder open).
 - Command palette: **Grok Code: Copy Bridge Token**.
 - Do not commit `.vscode-mcp.env`.
+- Set `VSCODE_MCP_TIMEOUT_MS` (default `60000`) to cap how long the MCP client waits on a single bridge request before aborting — prevents a hung editor from blocking the agent.
 
 ## Settings (Grok Code)
 

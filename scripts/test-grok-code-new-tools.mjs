@@ -168,6 +168,46 @@ async function runNewToolsSmoke() {
     }
     assert(blocked, "POST /command denylists quit");
 
+    // 13. Read a line range of a document
+    const linesRes = await client.post("/document/lines", {
+      path: "/tmp/hello-vscode-mcp.ts",
+      startLine: 1,
+      endLine: 1,
+    });
+    assert(
+      linesRes && linesRes.ok === true && linesRes.startLine === 1 &&
+        linesRes.endLine === 1 && /greet/.test(String(linesRes.text || "")) &&
+        !/\n/.test(String(linesRes.text || "")),
+      "POST /document/lines returns a single-line slice"
+    );
+
+    // 13b. Line range clamps out-of-bounds requests
+    const clampRes = await client.post("/document/lines", {
+      path: "/tmp/hello-vscode-mcp.ts",
+      startLine: 1,
+      endLine: 9999,
+    });
+    assert(
+      clampRes && clampRes.ok === true && clampRes.endLine === clampRes.lineCount,
+      "POST /document/lines clamps endLine to lineCount"
+    );
+
+    // 14. Client aborts slow requests once the timeout elapses
+    const { BridgeClient: TimeoutClient } = await import(pathToFileURL(clientPath).href);
+    const slowClient = new TimeoutClient({ ...bridgeConfig, timeoutMs: 150 });
+    let timedOut = false;
+    const t0 = Date.now();
+    try {
+      await slowClient.get("/sleep", { ms: "1500" });
+    } catch (e) {
+      timedOut = /timed out/i.test(String(e && e.message ? e.message : e));
+    }
+    const elapsed = Date.now() - t0;
+    assert(
+      timedOut && elapsed < 1200,
+      `client aborts slow request via timeout (timedOut=${timedOut}, elapsed=${elapsed}ms)`
+    );
+
   } finally {
     mock.kill("SIGTERM");
   }

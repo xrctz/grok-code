@@ -2,7 +2,7 @@
   "name": "vscode-mcp-bridge",
   "displayName": "Grok Code",
   "description": "Grok Code live bridge \u2014 exposes the editor to Grok (and other MCP clients) over localhost HTTP. Same layout & wire protocol.",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "publisher": "grok-labs",
   "engines": {
     "vscode": "^1.90.0"

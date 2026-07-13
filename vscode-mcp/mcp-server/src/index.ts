@@ -24,7 +24,7 @@ const bridge = new BridgeClient(config);
 
 const server = new McpServer({
   name: 'grok-code',
-  version: '0.1.2'
+  version: '0.1.3'
 });
 
 // ─── Read tools ─────────────────────────────────────────────────────────────
@@ -118,6 +118,31 @@ server.tool(
   async ({ path }) => {
     try {
       return textResult(await bridge.get('/document', { path }));
+    } catch (err) {
+      return errorResult(err);
+    }
+  }
+);
+
+server.tool(
+  'vscode_read_lines',
+  'Read a 1-based, inclusive line range of a document. Cheaper than vscode_get_document for large files — page through a file without reading it all. Omit path to use the active editor.',
+  {
+    path: z
+      .string()
+      .optional()
+      .describe('Absolute or workspace-relative path. Defaults to active editor.'),
+    startLine: z.number().int().positive().describe('First line to read (1-based, inclusive).'),
+    endLine: z
+      .number()
+      .int()
+      .positive()
+      .optional()
+      .describe('Last line to read (1-based, inclusive). Defaults to end of file.')
+  },
+  async ({ path, startLine, endLine }) => {
+    try {
+      return textResult(await bridge.post('/document/lines', { path, startLine, endLine }));
     } catch (err) {
       return errorResult(err);
     }
