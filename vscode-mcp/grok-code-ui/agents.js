@@ -115,21 +115,39 @@ function isExecutableFile(p) {
 /**
  * Extra directories to probe in addition to PATH (common per-user install dirs
  * that GUI-launched apps frequently miss because they don't source a shell rc).
+ * Covers Ubuntu/Linux, macOS (Homebrew), and Windows (npm / LocalAppData).
  * @param {NodeJS.ProcessEnv} [env]
+ * @param {NodeJS.Platform} [platform]
  */
-function extraBinDirs(env = process.env) {
+function extraBinDirs(env = process.env, platform = process.platform) {
   const home = env.HOME || env.USERPROFILE || os.homedir();
-  return [
+  /** @type {string[]} */
+  const dirs = [
     path.join(home, ".local", "bin"),
     path.join(home, ".npm-global", "bin"),
     path.join(home, ".cargo", "bin"),
     path.join(home, ".bun", "bin"),
     path.join(home, ".deno", "bin"),
     path.join(home, ".grok", "bin"),
-    "/usr/local/bin",
-    "/usr/bin",
-    "/opt/homebrew/bin",
   ];
+
+  if (platform === "win32") {
+    const local = env.LOCALAPPDATA || path.join(home, "AppData", "Local");
+    const roaming = env.APPDATA || path.join(home, "AppData", "Roaming");
+    dirs.push(
+      path.join(roaming, "npm"),
+      path.join(home, "AppData", "Roaming", "npm"),
+      path.join(local, "Programs"),
+      path.join(local, "Microsoft", "WindowsApps")
+    );
+  } else if (platform === "darwin") {
+    dirs.push("/opt/homebrew/bin", "/usr/local/bin", "/usr/bin");
+  } else {
+    // Ubuntu / Linux
+    dirs.push("/usr/local/bin", "/usr/bin", "/snap/bin");
+  }
+
+  return dirs;
 }
 
 /**

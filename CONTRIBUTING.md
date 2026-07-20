@@ -18,6 +18,8 @@ Avoid large edits under `vscode-src/src/` unless you are intentionally syncing w
 
 ## Development setup
 
+Requires **Node.js 20+**. The same commands work on **Ubuntu**, **macOS**, and **Windows**.
+
 ```bash
 git clone <your-fork-url>
 cd grok-code
@@ -34,10 +36,11 @@ npm run print-mcp-config
 # Package VSIX extensions
 npm run package
 
-# Launch Grok Code (downloads/brands binary on first run)
+# Launch Grok Code (downloads/brands the correct OS binary on first run)
 npm run launch -- "/path/to/folder"
 ```
 
+On Windows you can also use `.\launch.ps1`. On Ubuntu, `./launch.sh` and `npm run install:shell` set up the bare `grok` command and a desktop entry.
 ## Pull requests
 
 1. Branch from `main` using a descriptive name.

@@ -23,7 +23,7 @@ resolve_root() {
   )
   local c
   for c in "${candidates[@]}"; do
-    if [[ -n "$c" && -f "$c/scripts/launch-grok-code.sh" ]]; then
+    if [[ -n "$c" && ( -f "$c/scripts/launch-grok-code.mjs" || -f "$c/scripts/launch-grok-code.sh" ) ]]; then
       echo "$c"
       return 0
     fi
@@ -31,7 +31,7 @@ resolve_root() {
   # When this file still lives in the repo scripts/ dir
   local here
   here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  if [[ -f "$here/launch-grok-code.sh" ]]; then
+  if [[ -f "$here/launch-grok-code.mjs" || -f "$here/launch-grok-code.sh" ]]; then
     cd "$here/.." && pwd
     return 0
   fi
@@ -39,7 +39,17 @@ resolve_root() {
 }
 ROOT="$(resolve_root || true)"
 
-LAUNCHER="${ROOT:+$ROOT/scripts/launch-grok-code.sh}"
+# Prefer the cross-platform Node launcher; fall back to the bash shim.
+if [[ -n "$ROOT" && -f "$ROOT/scripts/launch-grok-code.mjs" ]]; then
+  LAUNCHER="$ROOT/scripts/launch-grok-code.mjs"
+  LAUNCH_CMD=(node "$LAUNCHER")
+elif [[ -n "$ROOT" && -f "$ROOT/scripts/launch-grok-code.sh" ]]; then
+  LAUNCHER="$ROOT/scripts/launch-grok-code.sh"
+  LAUNCH_CMD=(bash "$LAUNCHER")
+else
+  LAUNCHER=""
+  LAUNCH_CMD=()
+fi
 
 # Already inside Grok Code terminal, or forced standalone TUI
 if [[ -n "${GROK_CODE_EMBEDDED:-}" || -n "${GROK_STANDALONE:-}" ]]; then
@@ -71,7 +81,7 @@ if [[ ! -t 0 || ! -t 1 ]]; then
 fi
 
 # No Grok Code install available → fall back to real TUI
-if [[ -z "${LAUNCHER:-}" || ! -f "$LAUNCHER" ]]; then
+if [[ -z "${LAUNCHER:-}" || ! -f "$LAUNCHER" || ${#LAUNCH_CMD[@]} -eq 0 ]]; then
   exec "$REAL_GROK" "$@"
 fi
 
@@ -94,4 +104,4 @@ echo "Opening Grok Code with embedded Grok Build…" >&2
 echo "  (use: grok --standalone   for the classic terminal-only TUI)" >&2
 
 # If no folder args, open current working directory as the workspace
-exec bash "$LAUNCHER" "$GROK_CODE_CWD"
+exec "${LAUNCH_CMD[@]}" "$GROK_CODE_CWD"

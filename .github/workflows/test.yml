@@ -8,7 +8,11 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
 
@@ -28,3 +32,6 @@ jobs:
 
       - name: Package UI extension
         run: npm run package:ui
+
+      - name: Platform helper smoke
+        run: npm run test:platform

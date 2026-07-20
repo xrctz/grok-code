@@ -1,13 +1,13 @@
 {
   "name": "grok-code-playground",
   "private": true,
-  "version": "0.5.1",
-  "description": "Grok Code — branded VS Code shell + embedded Grok Build + optional Claude Code terminal + MCP bridge",
+  "version": "0.5.2",
+  "description": "Grok Code — branded VS Code shell + embedded Grok Build + optional Claude Code terminal + MCP bridge (Windows, macOS, Linux/Ubuntu)",
   "scripts": {
     "install:bridge": "npm install --prefix vscode-mcp/extension",
     "install:mcp": "npm install --prefix vscode-mcp/mcp-server",
     "install:all": "npm run install:bridge && npm run install:mcp && npm run build",
-    "install:shell": "bash scripts/install-grok-shell.sh",
+    "install:shell": "node scripts/install-grok-shell.mjs",
     "build:bridge": "npm run compile --prefix vscode-mcp/extension",
     "build:mcp": "npm run build --prefix vscode-mcp/mcp-server",
     "build": "npm run build:bridge && npm run build:mcp",
@@ -17,11 +17,12 @@
     "test:no-copilot": "node scripts/test-grok-code-no-copilot.mjs",
     "test:new-tools": "node scripts/test-grok-code-new-tools.mjs",
     "test:agents": "node scripts/test-grok-code-agents.mjs",
-    "test:mcp": "bash vscode-mcp/scripts/smoke-test.sh",
-    "test": "npm run build && npm run test:no-copilot && npm run test:new-tools && npm run test:agents && npm run test:mcp",
+    "test:platform": "node scripts/test-grok-code-platform.mjs",
+    "test:mcp": "node vscode-mcp/scripts/smoke-test.mjs",
+    "test": "npm run build && npm run test:no-copilot && npm run test:new-tools && npm run test:agents && npm run test:platform && npm run test:mcp",
     "print-mcp-config": "node scripts/print-mcp-config.mjs",
-    "ensure-binary": "bash scripts/ensure-vscode-binary.sh",
-    "launch": "bash scripts/launch-grok-code.sh",
+    "ensure-binary": "node scripts/ensure-vscode-binary.mjs",
+    "launch": "node scripts/launch-grok-code.mjs",
     "mock-bridge": "node vscode-mcp/scripts/mock-bridge.mjs"
   }
 }
