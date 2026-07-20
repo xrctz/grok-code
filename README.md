@@ -8,7 +8,7 @@
 
 [![CI](https://github.com/xrctz/grok-code/actions/workflows/test.yml/badge.svg)](https://github.com/xrctz/grok-code/actions/workflows/test.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.5.1-8b5cf6)](package.json)
+[![Version](https://img.shields.io/badge/version-0.5.2-8b5cf6)](package.json)
 
 A fully rebranded editor shell with embedded AI agents, an MCP bridge, and a one-word `grok` launcher.
 
@@ -40,8 +40,9 @@ Talk to **Grok Build** (or optionally **Claude Code**) inside the editor. Agents
 ### Prerequisites
 
 - **Node.js 20+**
-- **Linux** (primary target; macOS may work with minor path tweaks)
-- **Grok CLI** at `~/.grok/bin/grok` (for embedded agent)
+- **Windows, macOS, or Linux** (Ubuntu is the primary day-to-day target)
+- **Grok CLI** at `~/.grok/bin/grok` (optional; for the embedded agent)
+- **unzip** on Linux when bootstrapping the VS Code zip/tar (`sudo apt install unzip` if needed)
 
 ### Install & launch
 
@@ -50,15 +51,44 @@ git clone https://github.com/xrctz/grok-code.git
 cd grok-code
 
 npm run install:all    # install deps + build bridge/MCP
-npm run ensure-binary  # download & brand VS Code binary (first run)
+npm run ensure-binary  # download & brand VS Code for this OS (first run)
 npm run launch -- .    # open Grok Code in current directory
 ```
+
+**Ubuntu / Linux** (also works):
+
+```bash
+./launch.sh .
+npm run install:shell   # installs bare `grok` + ~/.bashrc PATH + .desktop entry
+source ~/.bashrc
+```
+
+**macOS**:
+
+```bash
+./launch.sh .
+npm run install:shell   # installs bare `grok` + updates ~/.zshrc
+source ~/.zshrc
+```
+
+**Windows** (PowerShell):
+
+```powershell
+npm run install:all
+npm run ensure-binary
+npm run launch -- .
+# or:
+.\launch.ps1 .
+npm run install:shell   # writes %USERPROFILE%\.local\bin\grok.cmd — add that folder to PATH
+```
+
+All of `ensure-binary`, `launch`, and `install:shell` are **Node scripts**, so the same `npm run …` commands work on every OS.
 
 ### One-word launch: `grok`
 
 ```bash
-./scripts/install-grok-shell.sh   # once
-source ~/.bashrc
+npm run install:shell   # once (Ubuntu → ~/.bashrc, macOS → ~/.zshrc, Windows → grok.cmd)
+# then reload your shell / PATH
 
 grok                   # Grok Code + embedded Grok Build
 grok "fix the tests"   # with an initial prompt
@@ -98,7 +128,7 @@ flowchart LR
 | UI pack | `vscode-mcp/grok-code-ui/` | Themes, Home Stage, agent terminals, layout |
 | Bridge extension | `vscode-mcp/extension/` | HTTP API on `127.0.0.1:7331` |
 | MCP server | `vscode-mcp/mcp-server/` | Translates MCP tools → bridge HTTP calls |
-| Launcher | `scripts/launch-grok-code.sh` | Binary bootstrap, VSIX install, profile seeding |
+| Launcher | `scripts/launch-grok-code.mjs` | Binary bootstrap, VSIX install, profile seeding (Win/macOS/Linux) |
 | Product source | `vscode-src/` | Code - OSS with Grok branding in `product.json` |
 
 ## Agent integration
@@ -154,9 +184,9 @@ See **[vscode-mcp/README.md](vscode-mcp/README.md)** for the full tool reference
 
 ```
 .
-├── launch.sh                 # thin launcher (opens editor + agent)
-├── launch-claude.sh          # Claude Code launcher (optional agent)
-├── scripts/                  # binary bootstrap, shell wrapper, smoke tests
+├── launch.sh / launch.ps1 # thin launchers (Unix / Windows)
+├── scripts/                  # cross-platform bootstrap, shell wrapper, smoke tests
+│   └── lib/platform.mjs      # OS paths, VS Code download URLs, Electron flags
 ├── vscode-mcp/               # bridge · MCP server · UI pack
 │   ├── extension/            # HTTP bridge :7331 (v0.1.5)
 │   ├── grok-code-ui/         # themes + Home Stage (+ mascot) + multi-agent terminals (v0.7.0)
@@ -164,11 +194,23 @@ See **[vscode-mcp/README.md](vscode-mcp/README.md)** for the full tool reference
 └── vscode-src/               # Code - OSS (~1.129) + product.json rebrand
 ```
 
+### Platform notes
+
+| | Cache (branded binary) | User profile | Shell install |
+| --- | --- | --- | --- |
+| **Ubuntu / Linux** | `~/.local/share/grok-code` | `~/.grok-code-app` | `~/.local/bin/grok` + `.desktop` |
+| **macOS** | `~/Library/Application Support/grok-code` | `~/.grok-code-app` | `~/.local/bin/grok` + `~/.zshrc` |
+| **Windows** | `%LOCALAPPDATA%\grok-code` | `%USERPROFILE%\.grok-code-app` | `%USERPROFILE%\.local\bin\grok.cmd` |
+
+Override with `GROK_CODE_CACHE`, `GROK_CODE_APP`, `GROK_CODE_USER_DATA`, or `CODE_BIN`.
+Linux launches pass `--no-sandbox` (common on Ubuntu / containers); macOS and Windows do not.
 ## Configuration
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `GROK_CODE_ROOT` | auto-detected | Path to this repo |
+| `GROK_CODE_CACHE` | OS default (see table above) | Branded VS Code download/cache root |
+| `GROK_CODE_USER_DATA` | `~/.grok-code-app` | Editor profile (settings + extensions) |
 | `GROK_CODE_OPEN_AGENT` | `1` | Open Grok Build terminal on launch |
 | `GROK_REAL_BIN` | `~/.grok/bin/grok` | Grok CLI binary path |
 | `CODE_BIN` | auto | Override VS Code binary |
@@ -219,7 +261,7 @@ See [Microsoft's contribution guide](https://github.com/microsoft/vscode/wiki/Ho
 GitHub Copilot is intentionally disabled:
 
 - `vscode-src/product.json` — no Copilot trust / auto-update
-- `scripts/launch-grok-code.sh` — hard `--disable-extension` for Copilot IDs
+- `scripts/launch-grok-code.mjs` — hard `--disable-extension` for Copilot IDs
 - `scripts/default-user-settings.json` — completions and chat agents off
 
 ## License

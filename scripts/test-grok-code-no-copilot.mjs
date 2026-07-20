@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Durable structural + MCP smoke tests for Grok Code (no Copilot product surface).
- * Drives real shipped artifacts: product.json, launch-grok-code.sh,
+ * Drives real shipped artifacts: product.json, launch-grok-code.mjs,
  * default-user-settings.json, and BridgeClient against mock-bridge.
  */
 import { spawn } from "node:child_process";
@@ -48,7 +48,7 @@ assert(
 );
 
 // --- 2. launcher hard-disables Copilot extensions ---
-const launcherPath = path.join(ROOT, "scripts", "launch-grok-code.sh");
+const launcherPath = path.join(ROOT, "scripts", "launch-grok-code.mjs");
 const launcher = fs.readFileSync(launcherPath, "utf8");
 for (const id of [
   "GitHub.copilot",
@@ -56,7 +56,7 @@ for (const id of [
   "GitHub.copilot-chat-cf",
 ]) {
   assert(
-    launcher.includes(`--disable-extension ${id}`),
+    launcher.includes(id),
     `launcher disables ${id}`
   );
 }
@@ -65,8 +65,14 @@ assert(
   "launcher seeds default-user-settings.json"
 );
 assert(
-  fs.statSync(launcherPath).mode & 0o111,
-  "launch-grok-code.sh is executable"
+  launcher.includes("electronLaunchFlags") || launcher.includes("--no-sandbox"),
+  "launcher uses platform-aware Electron flags"
+);
+assert(fs.existsSync(launcherPath), "launch-grok-code.mjs exists");
+const shimPath = path.join(ROOT, "scripts", "launch-grok-code.sh");
+assert(
+  fs.existsSync(shimPath) && (fs.statSync(shimPath).mode & 0o111),
+  "launch-grok-code.sh thin wrapper is executable"
 );
 
 // --- 3. default settings keep Copilot / agent chat off ---

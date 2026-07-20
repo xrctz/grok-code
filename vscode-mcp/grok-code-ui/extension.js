@@ -723,8 +723,15 @@ function resolveGrokBinary() {
     process.env.GROK_REAL_BIN,
     process.env.GROK_BIN,
     path.join(home, ".grok", "bin", "grok"),
+    process.platform === "win32"
+      ? path.join(home, ".grok", "bin", "grok.exe")
+      : null,
+    process.platform === "win32"
+      ? path.join(home, ".grok", "bin", "grok.cmd")
+      : null,
     "/usr/local/bin/grok",
     "/usr/bin/grok",
+    process.platform === "darwin" ? "/opt/homebrew/bin/grok" : null,
   ].filter(Boolean);
 
   for (const c of candidates) {
@@ -925,6 +932,14 @@ function resolveClaudeBinary() {
     process.env.CLAUDE_BIN,
     path.join(home, ".npm-global", "bin", "claude"),
     path.join(home, ".local", "bin", "claude"),
+    process.platform === "win32"
+      ? path.join(
+          process.env.APPDATA || path.join(home, "AppData", "Roaming"),
+          "npm",
+          "claude.cmd"
+        )
+      : null,
+    process.platform === "darwin" ? "/opt/homebrew/bin/claude" : null,
     "/usr/local/bin/claude",
     "/usr/bin/claude",
   ].filter(Boolean);

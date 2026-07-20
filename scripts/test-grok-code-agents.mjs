@@ -27,7 +27,7 @@ function assert(cond, msg) {
 
 // --- 1. Registry shape ---
 const agentsMod = require(path.join(UI, "agents.js"));
-const { AGENTS, findAgentBinary, listAgents, getAgent } = agentsMod;
+const { AGENTS, findAgentBinary, listAgents, getAgent, extraBinDirs } = agentsMod;
 
 const expectedIds = ["grok", "claude", "codex", "gemini", "opencode", "aider"];
 for (const id of expectedIds) {
@@ -43,6 +43,26 @@ assert(
 assert(
   getAgent("codex") && getAgent("codex").install.includes("@openai/codex"),
   "codex has an install hint"
+);
+
+// Platform-aware extra bin dirs
+assert(
+  extraBinDirs({ HOME: "/home/u" }, "linux").includes("/snap/bin"),
+  "linux extraBinDirs includes /snap/bin"
+);
+assert(
+  extraBinDirs({ HOME: "/Users/u" }, "darwin").includes("/opt/homebrew/bin"),
+  "darwin extraBinDirs includes Homebrew"
+);
+assert(
+  extraBinDirs(
+    {
+      USERPROFILE: "C:\\Users\\u",
+      APPDATA: "C:\\Users\\u\\AppData\\Roaming",
+    },
+    "win32"
+  ).some((d) => d.includes("npm")),
+  "win32 extraBinDirs includes npm"
 );
 
 // --- 2. Binary detection via env override ---
